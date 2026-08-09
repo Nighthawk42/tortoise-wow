@@ -86,9 +86,10 @@ AiPlayerbot.DeleteRandomBotAccounts = 0
 AiPlayerbot.LLMEnabled = 0
 ```
 
-One Classic account holds nine generated characters. The current selection
-logic can activate the whole account even with a target of five; the validated
-smoke run therefore had nine online bots. Keep the legacy LLM path explicitly
+One Classic account holds nine generated characters. The initial validation
+activated the whole account even with a target of five. After merging the
+2026-08-09 Shyalya range, the selection settled at the configured five active
+bots while retaining all nine characters. Keep the legacy LLM path explicitly
 disabled until the sidecar owns provider access.
 
 ## Database initialization
@@ -152,3 +153,10 @@ rows, 92,170 random-item-cache rows, and 254,082 teleport-cache rows. The
 restart verified nine of nine generated characters online, both Eluna markers,
 both server processes, 11 scripted Warden scans from the anticheat module, and
 PID files under `logs/run` with no loose files at the server root.
+
+The post-upstream-merge validation rebuilt and installed both executables,
+reached world-ready in 28 seconds, verified both Eluna smoke markers, retained
+the three cache counts above, and stabilized at the configured five active bots
+out of the nine generated characters. `mangosd` and `realmd` remained online on
+ports 8090 and 3724. The existing content-database reference-loot and waypoint
+warnings remain non-blocking and are separate from the Eluna/playerbot port.
