@@ -162,6 +162,8 @@ class LFTManager
         void UpdateBotFill(uint32 diff);
         void DropUnneededFillBots();
         void FillInstanceWithBots(std::string const& instance, QueuedPlayer const& waiter);
+        void SeedBotOnlyQueue();
+        void TeleportBotGroupToInstance(Offer const& offer);
         void AcceptOffersForFillBots();
         void ForgetFillBot(ObjectGuid const& guid);
         bool IsFillBot(ObjectGuid const& guid) const;
