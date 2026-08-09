@@ -2,8 +2,8 @@
 #include "playerbot/playerbot.h"
 #include "XpGainAction.h"
 #include "playerbot/LootObjectStack.h"
-#ifdef MANGOS
-#include "luaEngine.h"
+#ifdef ENABLE_ELUNA
+#include "LuaEngine.h"
 #endif
 
 
@@ -98,7 +98,13 @@ void XpGainAction::GiveXP(int32 xp, Unit* victim)
 
     // Used by Eluna
 #ifdef ENABLE_ELUNA
-    sEluna->OnGiveXP(bot, xp, victim);
+    if (xp > 0)
+    {
+        uint32 elunaXp = uint32(xp);
+        if (Eluna* eluna = bot->GetEluna())
+            eluna->OnGiveXP(bot, elunaXp, victim);
+        xp = int32(elunaXp);
+    }
 #endif /* ENABLE_ELUNA */
 
     // XP to money conversion processed in Player::RewardQuest

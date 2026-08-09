@@ -10,11 +10,7 @@ class Player;
 class PlayerbotMgr;
 class ChatHandler;
 
-#if PLATFORM == PLATFORM_WINDOWS
-inline std::string _D_AIPLAYERBOT_CONFIG = "aiplayerbot.conf";
-#else
 inline std::string _D_AIPLAYERBOT_CONFIG = SYSCONFDIR "aiplayerbot.conf";
-#endif
 
 enum class BotCheatMask : uint32
 {

@@ -49,6 +49,9 @@
 #include "miscellaneous/feature_transmog.h"
 #include "Config.hpp"
 #include "Logging/DatabaseLogger.hpp"
+#ifdef ENABLE_ELUNA
+#include "LuaEngine.h"
+#endif
 
 // config option SkipCinematics supported values
 enum CinematicsSkipMode
@@ -1099,6 +1102,11 @@ void WorldSession::HandlePlayerLogin(LoginQueryHolder *holder)
 
 
     ALL_SESSION_SCRIPTS(this, OnLogin(pCurrChar));
+
+#ifdef ENABLE_ELUNA
+    if (Eluna* eluna = pCurrChar->GetEluna())
+        eluna->OnLogin(pCurrChar);
+#endif
 
     // Only on the FIRST login (the one that plays the intro cinematic) is the client's item cache
     // cold enough to render nearby players/bots naked; subsequent logins already have the gear data

@@ -12,7 +12,9 @@
 #include "Policies/SingletonImp.h"
 #include "ObjectAccessor.h"
 #include "CharacterDatabaseCleaner.h"
+#include "Config/Config.h"
 
+#include <filesystem>
 #include <fstream>
 
 #define FAKE_PVP_POOL 800
@@ -373,7 +375,9 @@ void HonorMaintenancer::DoMaintenance()
     sLog.outHonor("[MAINTENANCE] Honor maintenance starting.");
 
     {
-        std::ofstream honorUpdateFile{ "honorupdate.txt" };
+        std::filesystem::path honorUpdatePath = sConfig.GetStringDefault("LogsDir", "");
+        honorUpdatePath /= "honorupdate.txt";
+        std::ofstream honorUpdateFile{ honorUpdatePath };
         if (honorUpdateFile)
             honorUpdateFile << "1";
     }

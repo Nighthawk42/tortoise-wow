@@ -33,7 +33,7 @@ BindIP = "0.0.0.0"
 
 #   Realmd daemon PID file.
 
-PidFile = "twrealmd.pid"
+PidFile = "logs/run/twrealmd.pid"
 
 #   Server console level of logging.
 #   0 = Minimum; 1 = Error; 2 = Detail; 3 = Full/Debug

@@ -150,6 +150,11 @@ class Creature;
 class Player;
 class Unit;
 class Map;
+#ifdef ENABLE_ELUNA
+class Eluna;
+class ElunaEventProcessor;
+class ElunaProcessorInfo;
+#endif
 class Item;
 class Aura;
 class UpdateMask;
@@ -411,6 +416,7 @@ class Object
 
         uint8 GetTypeId() const { return m_objectTypeId; }
         bool isType(TypeMask mask) const { return (mask & m_objectType); }
+        bool IsType(TypeMask mask) const { return isType(mask); }
 
         virtual void BuildCreateUpdateBlockForPlayer(UpdateData *data, Player *target) const;
         void SendCreateUpdateToPlayer(Player* player);
@@ -805,7 +811,7 @@ class WorldObject : public Object
                 WorldObject * const m_obj;
         };
 
-        virtual ~WorldObject () {}
+        virtual ~WorldObject();
 
         virtual void Update(uint32 /*update_diff*/, uint32 /*time_diff*/);
 
@@ -881,6 +887,7 @@ class WorldObject : public Object
         InstanceData* GetInstanceData() const;
 
         virtual char const* GetName() const = 0;
+        virtual void SetName(std::string const& /*name*/) {}
         virtual const char* GetNameForLocaleIdx(int32 /*locale_idx*/) const { return GetName(); }
         virtual uint8 GetGender() const { return 0; } // used in chat builder
 
@@ -1088,6 +1095,12 @@ class WorldObject : public Object
 
         void SetMap(Map * map);
         Map * GetMap() const;
+#ifdef ENABLE_ELUNA
+        Eluna* GetEluna() const;
+        ElunaEventProcessor* GetElunaEvents(int32 mapId);
+        std::unique_ptr<ElunaProcessorInfo> elunaMapEvents;
+        std::unique_ptr<ElunaProcessorInfo> elunaWorldEvents;
+#endif
         Map * FindMap() const { return m_currMap; }
 
         //used to check all object's GetMap() calls when object is not in world!
@@ -1117,6 +1130,7 @@ class WorldObject : public Object
         void GetAlivePlayerListInRange(WorldObject const* pSource, std::list<Player*>& lList, float fMaxSearchRange) const;
 
         bool isActiveObject() const { return m_isActiveObject || m_viewPoint.hasViewers(); }
+        bool IsActiveObject() const { return isActiveObject(); }
         void SetActiveObjectState(bool on);
 
         ViewPoint& GetViewPoint() { return m_viewPoint; }
@@ -1167,6 +1181,12 @@ virtual uint32 GetLevel() const = 0;
         SpellCastResult CastSpell(GameObject* pTarget, SpellEntry const* spellInfo, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr, SpellEntry const* triggeredByParent = nullptr);
         void CastCustomSpell(Unit* pTarget, uint32 spellId, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, bool addThreat = true, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
         void CastCustomSpell(Unit* pTarget, SpellEntry const* spellInfo, int32 const* bp0, int32 const* bp1, int32 const* bp2, bool triggered, Item* castItem = nullptr, Aura* triggeredByAura = nullptr, bool addThreat = true, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
+        void CastCustomSpell(Unit* target, uint32 spellId, int32 bp0, int32 bp1, int32 bp2, bool triggered, Item* castItem, Aura* triggeredByAura, ObjectGuid originalCaster)
+        {
+            CastCustomSpell(target, spellId,
+                bp0 ? &bp0 : nullptr, bp1 ? &bp1 : nullptr, bp2 ? &bp2 : nullptr,
+                triggered, castItem, triggeredByAura, true, originalCaster);
+        }
         void CastCustomSpell(Unit* target, SpellEntry const* customInfo, bool triggered = false);
         SpellCastResult CastSpell(float x, float y, float z, uint32 spellId, bool triggered, Item *castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);
         SpellCastResult CastSpell(float x, float y, float z, SpellEntry const *spellInfo, bool triggered, Item *castItem = nullptr, Aura* triggeredByAura = nullptr, ObjectGuid originalCaster = ObjectGuid(), SpellEntry const* triggeredBy = nullptr);

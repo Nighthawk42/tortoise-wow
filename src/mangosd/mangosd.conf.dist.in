@@ -404,11 +404,11 @@ DebuffLimit = 40
 # Enable logging of GM commands. (All SQL code will be written to a log file)
 # If a new day starts (00:00:00), a new file is created, the old file will not be deleted.
 
-LogSQL = 1
+LogSQL = 0
 
 # PidFile. World daemon PID file.
 
-PidFile = "twlive.pid"
+PidFile = "logs/run/twlive.pid"
 
 # LogLevel. Server console level of logging. 0 = Minimum; 1 = Basic&Error; 2 = Detail; 3 = Full/Debug
 
@@ -2227,3 +2227,23 @@ ScalarMin20ManHP = 0.1
 ScalarMin20ManDMG = 0.1
 ScalarMin40ManHP = 0.01
 ScalarMin40ManDMG = 0.01
+
+###################################################################################################
+# ELUNA LUA ENGINE
+#
+# Eluna is a required part of playerbot-enabled builds. Lua scripts are loaded
+# from Eluna.ScriptPath relative to the server working directory unless an
+# absolute path is supplied. Unsafe methods are disabled for bot-facing scripts.
+###################################################################################################
+
+Eluna.Enabled = 1
+Eluna.TraceBack = 1
+Eluna.ScriptReloader = 0
+Eluna.UseUnsafeMethods = 0
+Eluna.UseDeprecatedMethods = 1
+Eluna.ReloadCommand = 1
+Eluna.ReloadSecurityLevel = 3
+Eluna.ScriptPath = "lua_scripts"
+Eluna.OnlyOnMaps = ""
+Eluna.RequirePaths = ""
+Eluna.RequireCPaths = ""

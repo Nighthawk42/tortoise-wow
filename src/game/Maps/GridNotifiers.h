@@ -219,6 +219,25 @@ namespace MaNGOS
         template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED> &) {}
     };
 
+    // VMangos/Eluna compatibility: scan every object so checks that tighten
+    // their range can return the nearest match rather than the first match.
+    template<class Check>
+        struct WorldObjectLastSearcher
+    {
+        WorldObject*& i_object;
+        Check& i_check;
+
+        WorldObjectLastSearcher(WorldObject*& result, Check& check) : i_object(result), i_check(check) {}
+
+        void Visit(GameObjectMapType& m);
+        void Visit(PlayerMapType& m);
+        void Visit(CreatureMapType& m);
+        void Visit(CorpseMapType& m);
+        void Visit(DynamicObjectMapType& m);
+
+        template<class NOT_INTERESTED> void Visit(GridRefManager<NOT_INTERESTED>&) {}
+    };
+
     template<class Check>
         struct WorldObjectListSearcher
     {

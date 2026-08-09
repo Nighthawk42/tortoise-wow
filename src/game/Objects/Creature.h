@@ -218,7 +218,7 @@ struct CreatureInfo
     union { uint32  unit_class = 0; uint32 UnitClass; };
     uint32  unit_flags = 0;                                 // enum UnitFlags mask values
     union { uint32  dynamic_flags = 0; uint32 DynamicFlags; };
-    union { uint32  beast_family = 0; uint32 Family; };
+    union { uint32  beast_family = 0; uint32 Family; uint32 pet_family; };
     union { uint32  trainer_type = 0; uint32 TrainerType; };
     union { uint32  trainer_spell = 0; uint32 TrainerSpell; };
     union { uint32  trainer_class = 0; uint32 TrainerClass; };
@@ -590,7 +590,8 @@ class Creature : public Unit
         bool HasStaticDBSpawnData() const;                  // listed in `creature` table and have fixed in DB guid
         uint32 GetDBTableGUIDLow() const;
 
-        virtual char const* GetName() const override { return GetCreatureInfo()->name.c_str(); }
+        virtual char const* GetName() const override { return m_customName.empty() ? GetCreatureInfo()->name.c_str() : m_customName.c_str(); }
+        void SetName(std::string const& name) override { m_customName = name; }
         char const* GetSubName() const { return GetCreatureInfo()->subname.c_str(); }
 
         void Update(uint32 update_diff, uint32 time) override;  // overwrite Unit::Update
@@ -620,6 +621,13 @@ class Creature : public Unit
         bool IsCorpse() const { return GetDeathState() ==  CORPSE; }
         bool IsDespawned() const { return GetDeathState() ==  DEAD; }
         void SetCorpseDelay(uint32 delay) { m_corpseDelay = delay; }
+        uint32 GetCorpseDelay() const { return m_corpseDelay; }
+        bool IsReputationGainDisabled() const { return m_disableReputationGain; }
+        void SetDisableReputationGain(bool disable) { m_disableReputationGain = disable; }
+        bool IsTargetableBy(Unit const* /*attacker*/, bool /*checkFakeDeath*/ = false, bool mustBeDead = false) const
+        {
+            return mustBeDead ? IsDead() : (IsAlive() && !HasFlag(UNIT_FIELD_FLAGS, UNIT_FLAG_NOT_SELECTABLE));
+        }
         // cmangos has SetCorpseAccelerationDelay; Penqle has only SetCorpseDelay.
         void SetCorpseAccelerationDelay(uint32 delay) { m_corpseDelay = delay; }
         // IsCritter: cmangos shorthand for type == CREATURE_TYPE_CRITTER.
@@ -719,6 +727,7 @@ class Creature : public Unit
         bool HasSpell(uint32 spellID) const override;
 
         bool UpdateEntry(uint32 entry, const CreatureData* data = nullptr, GameEventCreatureData const* eventData = nullptr, bool preserveHPAndPower = true);
+        bool UpdateEntry(uint32 entry, GameEventCreatureData const* eventData) { return UpdateEntry(entry, nullptr, eventData); }
 
         void ApplyGameEventSpells(GameEventCreatureData const* eventData, bool activated);
         bool UpdateStats(Stats stat) override;
@@ -1014,6 +1023,7 @@ class Creature : public Unit
         void RegenerateMana();
 
         void SetVirtualItem(VirtualItemSlot slot, uint32 item_id);
+        void SetVirtualItem(WeaponAttackType slot, uint32 itemId) { SetVirtualItem(VirtualItemSlot(slot), itemId); }
 
         void ResetDamageTakenOrigin()
         {
@@ -1183,6 +1193,8 @@ class Creature : public Unit
         uint32_t m_lootIdOverride = 0;
 
     private:
+        std::string m_customName;
+        bool m_disableReputationGain = false;
         GridReference<Creature> m_gridRef;
         CreatureInfo const* m_creatureInfo;
 };

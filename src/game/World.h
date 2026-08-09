@@ -57,6 +57,9 @@ class SqlResultQueue;
 class QueryResult;
 class World;
 class ChannelBroadcaster;
+#ifdef ENABLE_ELUNA
+class Eluna;
+#endif
 // forward-decl so World::GetLFGQueue() return type compiles.
 class LFGQueue;
 // forward-decl GraveYardData (defined in ObjectMgr.h)
@@ -1142,6 +1145,9 @@ class World
         static bool IsStopped() { return m_stopEvent; }
 
         void Update(uint32 diff);
+#ifdef ENABLE_ELUNA
+        Eluna* GetEluna() const { return m_eluna; }
+#endif
 
         void UpdateSessions( uint32 diff );
 
@@ -1479,6 +1485,9 @@ class World
         std::unique_ptr<ChannelBroadcaster> m_ChannelBroadcaster;
 
         std::unique_ptr<ThreadPool> m_updateThreads;
+#ifdef ENABLE_ELUNA
+        Eluna* m_eluna = nullptr;
+#endif
 };
 
 extern uint32 realmID;

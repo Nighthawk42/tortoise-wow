@@ -97,6 +97,18 @@ add_executable(${EXECUTABLE_NAME}
   ${EXECUTABLE_SRCS}
 )
 
+if(BUILD_ELUNA)
+  target_compile_definitions(${EXECUTABLE_NAME} PRIVATE
+    BUILD_ELUNA
+    ENABLE_ELUNA
+    ELUNA_VMANGOS
+    ELUNA_EXPANSION=0
+  )
+  target_include_directories(${EXECUTABLE_NAME} PRIVATE
+    ${CMAKE_SOURCE_DIR}/src/game/LuaEngine
+  )
+endif()
+
 if(USE_SCRIPTS)
   target_link_libraries(${EXECUTABLE_NAME}
     game

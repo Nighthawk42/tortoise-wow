@@ -55,6 +55,9 @@
 #include "miscellaneous/feature_transmog.h"
 #include "Anticheat/Warden/Warden.hpp"
 #include "Logging/DatabaseLogger.hpp"
+#ifdef ENABLE_ELUNA
+#include "LuaEngine.h"
+#endif
 
 #ifdef USING_DISCORD_BOT
 #include "DiscordBot/Bot.hpp"
@@ -625,6 +628,10 @@ void WorldSession::LogoutPlayer(bool Save)
     // tears down the Player. Safe to call on real players / bots (no-op when ptr is null).
     if (_player)
     {
+#ifdef ENABLE_ELUNA
+        if (Eluna* eluna = _player->GetEluna())
+            eluna->OnLogout(_player);
+#endif
         _player->RemovePlayerbotAI();
         _player->RemovePlayerbotMgr();
     }

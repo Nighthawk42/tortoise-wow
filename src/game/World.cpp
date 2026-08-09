@@ -96,6 +96,12 @@
 #include <ace/OS_NS_dirent.h>
 #include "PerformanceMonitor.h"
 
+#ifdef ENABLE_ELUNA
+#include "LuaEngine.h"
+#include "ElunaConfig.h"
+#include "ElunaLoader.h"
+#endif
+
 #include <filesystem>
 
 #ifdef USING_DISCORD_BOT
@@ -189,6 +195,14 @@ World::World():
 /// World destructor
 World::~World()
 {
+#ifdef ENABLE_ELUNA
+    if (m_eluna)
+    {
+        m_eluna->OnShutdown();
+        delete m_eluna;
+        m_eluna = nullptr;
+    }
+#endif
 }
 
 // return Penqle's existing sLFGMgr.
@@ -604,7 +618,7 @@ void World::LoadConfigSettingsCommonPart(bool reload)
         m_lastDiffs.resize(50);
 
 #ifdef USE_ANTICHEAT
-    sAnticheatConfig.SetSource("anticheat.conf");
+    sAnticheatConfig.SetSource(_LIB_ANTICHEAT_CONFIG);
     sAnticheatConfig.loadConfigSettings();
 #endif
 
@@ -1773,10 +1787,13 @@ void World::StopHttpApiServer()
 
 void CheckEggExploit()
 {
-    if (std::filesystem::exists("egglog.txt"))
+    std::filesystem::path eggLogPath = sConfig.GetStringDefault("LogsDir", "");
+    eggLogPath /= "egglog.txt";
+
+    if (std::filesystem::exists(eggLogPath))
         return;
 
-    std::ofstream fileStream{ "egglog.txt" };
+    std::ofstream fileStream{ eggLogPath };
 
     if (!fileStream)
         return;
@@ -1881,6 +1898,18 @@ void LoadPlayerEggLoot();
 
     sLog.outString("Loading config...");
     LoadConfigSettings();
+
+#ifdef ENABLE_ELUNA
+    sLog.outString("Loading Eluna config...");
+    sElunaConfig->Initialize();
+    if (sElunaConfig->IsElunaEnabled())
+    {
+        sLog.outString("Loading Lua scripts...");
+        sElunaLoader->LoadScripts();
+        m_eluna = new Eluna(nullptr);
+        m_eluna->OnStartup();
+    }
+#endif
 
     if (sConfig.GetIntDefault("Logs.Export", 0) == 1)
     {
@@ -2386,7 +2415,9 @@ void LoadPlayerEggLoot();
 #endif
 
     {
-        std::ofstream honorUpdateFile{ "honorupdate.txt" };
+        std::filesystem::path honorUpdatePath = sConfig.GetStringDefault("LogsDir", "");
+        honorUpdatePath /= "honorupdate.txt";
+        std::ofstream honorUpdateFile{ honorUpdatePath };
         if (honorUpdateFile)
             honorUpdateFile << "0";
     }
@@ -2650,6 +2681,14 @@ void World::Update(uint32 diff)
     sGuardMgr.Update(diff);
     sZoneScriptMgr.Update(diff);
     sDynamicVisMgr.UpdateVisibility(diff);
+
+#ifdef ENABLE_ELUNA
+    if (m_eluna)
+    {
+        m_eluna->UpdateEluna(diff);
+        m_eluna->OnWorldUpdate(diff);
+    }
+#endif
 
     // hook into bot module update.
     // RandomPlayerbotMgr::UpdateAI ticks all logged-in random bots and the bot login queue.

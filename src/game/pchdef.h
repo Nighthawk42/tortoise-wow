@@ -12,3 +12,6 @@
 #include "GuildMgr.h"
 #include "ObjectMgr.h"
 #include "ScriptMgr.h"
+#ifdef ENABLE_ELUNA
+#include "LuaValue.h"
+#endif

@@ -28,6 +28,8 @@
 #include "GuildMgr.h"
 #include "miscellaneous/feature_transmog.h"
 #include "PerfStats.h"
+#include "ObjectAccessor.h"
+#include "Bag.h"
 
 void AddItemsSetItem(Player* player, Item* item)
 {
@@ -1084,6 +1086,16 @@ Item* Item::CreateItem(uint32 item, uint32 count, Player const* player)
             delete pItem;
     }
     return nullptr;
+}
+
+Item* Item::CreateItem(uint32 item, uint32 count, ObjectGuid const& ownerGuid)
+{
+    return CreateItem(item, count, ObjectAccessor::FindPlayer(ownerGuid));
+}
+
+bool Item::IsNotEmptyBag() const
+{
+    return IsBag() && !static_cast<Bag const*>(this)->IsEmpty();
 }
 
 Item* Item::CloneItem(uint32 count, Player const* player) const

@@ -759,7 +759,7 @@ public:
     void SetLastEvent(Event& event) { lastEvent = event; }
     Event& GetLastEvent() { return lastEvent; }
 
-#ifdef BUILD_ELUNA
+#if defined(BUILD_ELUNA) && defined(ELUNA_CMANGOS)
     MaNGOS::unique_weak_ptr<PlayerbotAI> GetWeakPtr() const { return m_weakRef; }
     void SetWeakPtr(MaNGOS::unique_weak_ptr<PlayerbotAI> weakRef) { m_weakRef = std::move(weakRef); }
 #endif
@@ -819,7 +819,7 @@ public:
     std::vector<std::string> GetRecordedMessages() { m_recordMessages = false; m_recordIncommingMessages= false; auto msgs = m_recordedMessages; m_recordedMessages.clear(); return msgs; }
     void ClearRecordedMessages() { m_recordedMessages.clear(); m_recordMessages = false; m_recordIncommingMessages = false;}
 
-#ifdef BUILD_ELUNA
+#if defined(BUILD_ELUNA) && defined(ELUNA_CMANGOS)
     MaNGOS::unique_weak_ptr<PlayerbotAI> m_weakRef;
 #endif
 };

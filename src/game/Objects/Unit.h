@@ -450,6 +450,7 @@ class Unit : public WorldObject
         bool HealthBelowPctDamaged(int32 pct, uint32 damage) const { return (int32(GetHealth()) - damage) * 100 < GetMaxHealth() * pct; }
         bool HealthAbovePct(int32 pct) const { return GetHealth() * 100 > GetMaxHealth() * pct; }
         uint32 CountPctFromMaxHealth(int32 pct) const { return uint32(float(pct) * GetMaxHealth() / 100.0f); }
+        uint32 CountPctFromCurHealth(int32 pct) const { return uint32(float(pct) * GetHealth() / 100.0f); }
         void SetFullHealth() { SetHealth(GetMaxHealth()); }
 
         Powers GetPowerType() const { return Powers(GetByteValue(UNIT_FIELD_BYTES_0, 3)); }
@@ -559,7 +560,19 @@ class Unit : public WorldObject
             return creatureType ? (1 << (creatureType - 1)) : 0;
         }
         bool IsAlive() const { return (m_deathState == ALIVE); }
+        bool IsDying() const { return m_deathState == JUST_DIED; }
         bool IsDead() const { return ((m_deathState == DEAD) || (m_deathState == CORPSE)); }
+        bool IsTotalImmune() const
+        {
+            return IsImmuneToDamage(SPELL_SCHOOL_MASK_NORMAL) &&
+                IsImmuneToDamage(SPELL_SCHOOL_MASK_HOLY) &&
+                IsImmuneToDamage(SPELL_SCHOOL_MASK_FIRE) &&
+                IsImmuneToDamage(SPELL_SCHOOL_MASK_NATURE) &&
+                IsImmuneToDamage(SPELL_SCHOOL_MASK_FROST) &&
+                IsImmuneToDamage(SPELL_SCHOOL_MASK_SHADOW) &&
+                IsImmuneToDamage(SPELL_SCHOOL_MASK_ARCANE);
+        }
+        bool isAttackingPlayer() const;
 
         DeathState GetDeathState() const { return m_deathState; }
         virtual void SetDeathState(DeathState s);           // overwritten in Creature/Player/Pet
@@ -1091,6 +1104,7 @@ class Unit : public WorldObject
         // bot passes SpellEntry; forward to ID-based version.
         void RemoveSpellCooldown(SpellEntry const& spellInfo, bool update = false);  // impl in Unit.cpp
         void RemoveAllSpellCooldown();
+        void RemoveSpellCategoryCooldown(uint32 category, bool update = true);
         void RemoveAllArenaSpellCooldown();
         void WritePetSpellsCooldown(WorldPacket& data) const;
         GlobalCooldownMgr& GetGlobalCooldownMgr() { return m_GlobalCooldownMgr; }
@@ -1204,6 +1218,10 @@ class Unit : public WorldObject
 
         void AttackerStateUpdate(Unit* pVictim, WeaponAttackType attType = BASE_ATTACK, bool checkLoS = true, bool extra = false);
         void SendAttackStateUpdate(uint32 HitInfo, Unit* target, uint8 SwingType, SpellSchoolMask damageSchoolMask, uint32 Damage, uint32 AbsorbDamage, int32 Resist, VictimState TargetState, uint32 BlockedAmount) const;
+        void SendAttackStateUpdate(uint32 hitInfo, Unit* target, SpellSchoolMask schoolMask, uint32 damage, uint32 absorb, int32 resist, VictimState targetState, uint32 blocked) const
+        {
+            SendAttackStateUpdate(hitInfo, target, BASE_ATTACK, schoolMask, damage, absorb, resist, targetState, blocked);
+        }
         void SendMeleeAttackStop(Unit* victim) const;
         void SendMeleeAttackStart(Unit* pVictim) const;
 

@@ -348,6 +348,46 @@ void MaNGOS::WorldObjectSearcher<Check>::Visit(DynamicObjectMapType &m)
 }
 
 template<class Check>
+void MaNGOS::WorldObjectLastSearcher<Check>::Visit(GameObjectMapType& m)
+{
+    for (auto& itr : m)
+        if (i_check(itr.getSource()))
+            i_object = itr.getSource();
+}
+
+template<class Check>
+void MaNGOS::WorldObjectLastSearcher<Check>::Visit(PlayerMapType& m)
+{
+    for (auto& itr : m)
+        if (i_check(itr.getSource()))
+            i_object = itr.getSource();
+}
+
+template<class Check>
+void MaNGOS::WorldObjectLastSearcher<Check>::Visit(CreatureMapType& m)
+{
+    for (auto& itr : m)
+        if (i_check(itr.getSource()))
+            i_object = itr.getSource();
+}
+
+template<class Check>
+void MaNGOS::WorldObjectLastSearcher<Check>::Visit(CorpseMapType& m)
+{
+    for (auto& itr : m)
+        if (i_check(itr.getSource()))
+            i_object = itr.getSource();
+}
+
+template<class Check>
+void MaNGOS::WorldObjectLastSearcher<Check>::Visit(DynamicObjectMapType& m)
+{
+    for (auto& itr : m)
+        if (i_check(itr.getSource()))
+            i_object = itr.getSource();
+}
+
+template<class Check>
 void MaNGOS::WorldObjectListSearcher<Check>::Visit(PlayerMapType& m)
 {
     for(auto & itr : m)

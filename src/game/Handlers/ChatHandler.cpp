@@ -46,6 +46,9 @@
 #include "Database/DatabaseImpl.h"
 #include "Shop/ShopMgr.h"
 #include "GMTicketMgr.h"
+#ifdef ENABLE_ELUNA
+#include "LuaEngine.h"
+#endif
 
 
 #include "rapidjson/document.h"
@@ -391,6 +394,60 @@ void WorldSession::HandleMessagechatOpcode(WorldPacket & recv_data)
                 return;
         }
     }
+
+#ifdef ENABLE_ELUNA
+    if (Eluna* eluna = _player->GetEluna())
+    {
+        bool allow = true;
+        switch (type)
+        {
+            case CHAT_MSG_CHANNEL:
+            {
+                PlayerPointer playerPointer(GetPlayerPointer());
+                ChannelMgr* manager = channelMgr(playerPointer->GetTeam());
+                Channel* chatChannel = manager ? manager->GetChannel(channel, playerPointer) : nullptr;
+                allow = chatChannel ? eluna->OnChat(_player, type, lang, msg, chatChannel) : eluna->OnChat(_player, type, lang, msg);
+                break;
+            }
+            case CHAT_MSG_PARTY:
+            case CHAT_MSG_RAID:
+            case CHAT_MSG_RAID_LEADER:
+            case CHAT_MSG_RAID_WARNING:
+            case CHAT_MSG_BATTLEGROUND:
+            case CHAT_MSG_BATTLEGROUND_LEADER:
+            {
+                Group* group = _player->GetOriginalGroup();
+                if (!group)
+                    group = _player->GetGroup();
+                allow = group ? eluna->OnChat(_player, type, lang, msg, group) : eluna->OnChat(_player, type, lang, msg);
+                break;
+            }
+            case CHAT_MSG_GUILD:
+            case CHAT_MSG_OFFICER:
+            {
+                Guild* guild = sGuildMgr.GetGuildById(_player->GetGuildId());
+                allow = guild ? eluna->OnChat(_player, type, lang, msg, guild) : eluna->OnChat(_player, type, lang, msg);
+                break;
+            }
+            case CHAT_MSG_WHISPER:
+            {
+                std::string receiverName = to;
+                Player* receiver = nullptr;
+                if (normalizePlayerName(receiverName))
+                    if (MasterPlayer* master = ObjectAccessor::FindMasterPlayer(receiverName.c_str()))
+                        receiver = master->GetSession()->GetPlayer();
+                allow = receiver ? eluna->OnChat(_player, type, lang, msg, receiver) : eluna->OnChat(_player, type, lang, msg);
+                break;
+            }
+            default:
+                allow = eluna->OnChat(_player, type, lang, msg);
+                break;
+        }
+
+        if (!allow || msg.empty())
+            return;
+    }
+#endif
 
     // Dispatch chat to the master's own bots so they can react to /party,
     // /raid, /guild, /say, /yell, and whispers. cmangos hooks here (in

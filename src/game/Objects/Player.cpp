@@ -68,6 +68,9 @@
 #include "Mail.h"
 #include "WaypointMovementGenerator.h"
 #include "GMTicketMgr.h"
+#ifdef ENABLE_ELUNA
+#include "LuaEngine.h"
+#endif
 #include "MasterPlayer.h"
 #include "MovementPacketSender.h"
 #include "miscellaneous/feature_transmog.h"
@@ -3641,6 +3644,13 @@ void Player::GiveXP(uint32 xp, Unit* victim)
 
     if (!IsAlive())
         return;
+
+#ifdef ENABLE_ELUNA
+    if (Eluna* eluna = GetEluna())
+        eluna->OnGiveXP(this, xp, victim);
+    if (xp < 1)
+        return;
+#endif
 
     uint32 level = GetLevel();
 

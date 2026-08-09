@@ -825,6 +825,8 @@ class GameObject : public WorldObject
         void SaveRespawnTime() override;
 
         Loot loot;
+        Player* GetLootRecipient() const { return nullptr; }
+        Group* GetGroupLootRecipient() const { return nullptr; }
         // bot accesses go->m_loot like a pointer.
         Loot* const m_loot = &loot;
         // GetLinkedTrap: cmangos accesses linked-trap GO. Stub returns nullptr.

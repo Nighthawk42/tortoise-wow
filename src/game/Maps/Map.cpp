@@ -61,8 +61,22 @@
 #include "Logging/DatabaseLogger.hpp"
 #include "PerfStats.h"
 
+#ifdef ENABLE_ELUNA
+#include "LuaEngine.h"
+#include "ElunaConfig.h"
+#endif
+
 Map::~Map()
 {
+#ifdef ENABLE_ELUNA
+    if (m_eluna)
+    {
+        m_eluna->OnDestroy(this);
+        delete m_eluna;
+        m_eluna = nullptr;
+    }
+#endif
+
     UnloadAll(true);
 
     if (!m_scriptSchedule.empty())
@@ -143,6 +157,14 @@ Map::Map(uint32 id, time_t expiry, uint32 InstanceId)
     m_persistentState->SetUsedByMapState(this);
 
     m_weatherSystem = new WeatherSystem(this);
+
+#ifdef ENABLE_ELUNA
+    if (sElunaConfig->IsElunaEnabled() && sElunaConfig->ShouldMapLoadEluna(id))
+    {
+        m_eluna = new Eluna(this);
+        m_eluna->OnCreate(this);
+    }
+#endif
 
     if (IsContinent())
     {
@@ -409,6 +431,11 @@ bool Map::Add(Player *player)
 
     if (i_data)
         i_data->OnPlayerEnter(player);
+
+#ifdef ENABLE_ELUNA
+    if (m_eluna)
+        m_eluna->OnPlayerEnter(this, player);
+#endif
 
     // Remove any buffs defined in instance_aura_removal for the new map
     sAuraRemovalMgr.PlayerEnterMap(i_id, player);
@@ -950,6 +977,14 @@ void Map::Update(uint32 t_diff)
 
     ScriptsProcess();
 
+#ifdef ENABLE_ELUNA
+    if (m_eluna)
+    {
+        m_eluna->UpdateEluna(t_diff);
+        m_eluna->OnMapUpdate(this, t_diff);
+    }
+#endif
+
     if (i_data)
         i_data->Update(t_diff);
 
@@ -1129,6 +1164,11 @@ void ScriptedEvent::SendEventToAllTargets(uint32 uiData)
 
 void Map::Remove(Player *player, bool remove)
 {
+#ifdef ENABLE_ELUNA
+    if (m_eluna)
+        m_eluna->OnPlayerLeave(this, player);
+#endif
+
     if (i_data)
         i_data->OnPlayerLeave(player, remove);
 

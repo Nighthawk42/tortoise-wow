@@ -5111,6 +5111,22 @@ void Unit::SendAttackStateUpdate(uint32 HitInfo, Unit* target, uint8 /*SwingType
     SendAttackStateUpdate(&dmgInfo);
 }
 
+namespace
+{
+    struct IsAttackingPlayerHelper
+    {
+        bool operator()(Unit const* unit) const { return unit->isAttackingPlayer(); }
+    };
+}
+
+bool Unit::isAttackingPlayer() const
+{
+    if (HasUnitState(UNIT_STAT_MELEE_ATTACKING) || GetCurrentSpell(CURRENT_CHANNELED_SPELL))
+        return true;
+
+    return CheckAllControlledUnits(IsAttackingPlayerHelper(), CONTROLLED_PET | CONTROLLED_TOTEMS | CONTROLLED_GUARDIANS | CONTROLLED_CHARM);
+}
+
 void Unit::SetInitCreaturePowerType()
 {
     if (IsPlayer())
@@ -11796,6 +11812,24 @@ void Unit::RemoveAllSpellCooldown()
             pPlayer->SendClearAllCooldowns(this);
 
         m_spellCooldowns.clear();
+    }
+}
+
+void Unit::RemoveSpellCategoryCooldown(uint32 category, bool update)
+{
+    for (auto itr = m_spellCooldowns.begin(); itr != m_spellCooldowns.end();)
+    {
+        if (itr->second.cat != category)
+        {
+            ++itr;
+            continue;
+        }
+
+        uint32 spellId = itr->first;
+        itr = m_spellCooldowns.erase(itr);
+        if (update)
+            if (Player* player = GetAffectingPlayer())
+                player->SendClearCooldown(spellId, this);
     }
 }
 

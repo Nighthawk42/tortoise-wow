@@ -1,0 +1,12 @@
+# Generated into the pinned Boost release archive by the playerbot dependency
+# fallback. Official Boost source archives contain the modular CMake files but
+# omit the super-project's small root CMakeLists.txt, so reproduce that upstream
+# entry point here.
+cmake_minimum_required(VERSION 3.16)
+project(Boost VERSION @PLAYERBOTS_BOOST_VERSION@ LANGUAGES CXX)
+
+set(BOOST_SUPERPROJECT_VERSION ${PROJECT_VERSION})
+set(BOOST_SUPERPROJECT_SOURCE_DIR ${PROJECT_SOURCE_DIR})
+list(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/tools/cmake/include)
+include(BoostRoot)
+

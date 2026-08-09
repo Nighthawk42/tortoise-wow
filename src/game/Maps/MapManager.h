@@ -183,6 +183,9 @@ class MapManager : public MaNGOS::Singleton<MapManager, MaNGOS::ClassLevelLockab
         template<typename Do>
         void DoForAllMapsWithMapId(uint32 mapId, Do& _do);
 
+        template<typename Do>
+        void DoForAllMaps(Do& _do);
+
         void ScheduleInstanceSwitch(Player* player, uint16 newInstance);
         void SwitchPlayersInstances();
 
@@ -255,6 +258,13 @@ void MapManager::DoForAllMapsWithMapId(uint32 mapId, Do& _do)
     MapMapType::const_iterator end = i_maps.lower_bound(MapID(mapId + 1, 0));
     for (auto itr = start; itr != end; ++itr)
         _do(itr->second);
+}
+
+template<typename Do>
+void MapManager::DoForAllMaps(Do& _do)
+{
+    for (auto const& entry : i_maps)
+        _do(entry.second);
 }
 
 #define sMapMgr MapManager::Instance()

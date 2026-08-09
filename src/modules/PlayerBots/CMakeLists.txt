@@ -181,6 +181,113 @@ target_link_libraries(${LIBRARY_NAME}
   PRIVATE Detour
   PRIVATE g3dlite
 )
+set(PLAYERBOTS_BOOST_COMPONENTS thread filesystem system)
+if(POLICY CMP0167)
+  cmake_policy(PUSH)
+  cmake_policy(SET CMP0167 OLD)
+endif()
+find_package(Boost 1.70 QUIET COMPONENTS ${PLAYERBOTS_BOOST_COMPONENTS})
+if(POLICY CMP0167)
+  cmake_policy(POP)
+endif()
+
+if(NOT Boost_FOUND)
+  if(NOT PLAYERBOTS_FETCH_BOOST)
+    message(FATAL_ERROR
+      "Playerbots require Boost 1.70+ components thread, filesystem, and system. "
+      "Install Boost or configure with -DPLAYERBOTS_FETCH_BOOST=ON.")
+  endif()
+
+  message(STATUS "System Boost not found; fetching pinned Boost 1.91.0 for playerbots")
+  include(FetchContent)
+
+  # The official Boost release archive contains every header dependency used by
+  # playerbots. Limit compiled/configured libraries to the direct requirements
+  # and their dependency closure. The archive checksum is published on
+  # https://www.boost.org/releases/1.91.0/.
+  set(BOOST_INCLUDE_LIBRARIES
+    algorithm
+    asio
+    bimap
+    bind
+    filesystem
+    functional
+    smart_ptr
+    stacktrace
+    system
+    thread
+    CACHE STRING "Boost libraries required by playerbots" FORCE)
+  set(BOOST_ENABLE_CMAKE ON CACHE BOOL "Use Boost's CMake build" FORCE)
+  set(BOOST_SKIP_INSTALL_RULES ON CACHE BOOL "Do not install fetched Boost targets" FORCE)
+  set(BUILD_TESTING OFF CACHE BOOL "Disable third-party tests" FORCE)
+
+  FetchContent_Declare(
+    playerbots_boost
+    URL https://archives.boost.io/release/1.91.0/source/boost_1_91_0.tar.gz
+    URL_HASH SHA256=5734305f40a76c30f951c9abd409a45a2a19fb546efe4162119250bbe4d3a463
+    DOWNLOAD_EXTRACT_TIMESTAMP TRUE)
+  FetchContent_MakeAvailable(playerbots_boost)
+  message(STATUS "Playerbot fetched Boost source: ${playerbots_boost_SOURCE_DIR}")
+
+  # Release archives intentionally omit the Boost super-project's root
+  # CMakeLists.txt even though all modular CMake files are present. Generate the
+  # official entry-point shape, then add it after FetchContent has populated the
+  # verified archive.
+  if(NOT TARGET Boost::thread)
+    set(PLAYERBOTS_BOOST_VERSION 1.91.0)
+    configure_file(
+      ${CMAKE_SOURCE_DIR}/cmake/PlayerbotsBoostRoot.CMakeLists.txt.in
+      ${playerbots_boost_SOURCE_DIR}/CMakeLists.txt
+      @ONLY)
+    # Official release archives consolidate the modular library headers under
+    # <archive>/boost instead of retaining the Git super-project's
+    # libs/<name>/include layout expected by the modular CMake targets.
+    add_subdirectory(
+      ${playerbots_boost_SOURCE_DIR}
+      ${playerbots_boost_BINARY_DIR}
+      EXCLUDE_FROM_ALL)
+
+  endif()
+
+  # Boost's modular targets point at libs/<name>/include, a layout used by the
+  # Git super-project. Release archives instead consolidate headers under
+  # <archive>/boost. Apply this on every configure: after the first configure,
+  # FetchContent sees the generated root CMakeLists and creates the targets
+  # before the compatibility block above.
+  set(_playerbots_boost_targets
+    boost_assert
+    boost_atomic
+    boost_chrono
+    boost_container
+    boost_context
+    boost_core
+    boost_date_time
+    boost_filesystem
+    boost_stacktrace_basic
+    boost_stacktrace_from_exception
+    boost_stacktrace_noop
+    boost_stacktrace_windbg
+    boost_system
+    boost_thread
+    boost_unordered
+    boost_variant2)
+  foreach(_boost_target IN LISTS _playerbots_boost_targets)
+    if(TARGET ${_boost_target})
+      get_target_property(_boost_target_type ${_boost_target} TYPE)
+      if(_boost_target_type STREQUAL "INTERFACE_LIBRARY")
+        target_include_directories(${_boost_target} SYSTEM INTERFACE ${playerbots_boost_SOURCE_DIR})
+      else()
+        target_include_directories(${_boost_target} SYSTEM PUBLIC ${playerbots_boost_SOURCE_DIR})
+      endif()
+    endif()
+  endforeach()
+  target_include_directories(${LIBRARY_NAME} SYSTEM PRIVATE ${playerbots_boost_SOURCE_DIR})
+
+  if(NOT TARGET Boost::thread OR NOT TARGET Boost::filesystem OR NOT TARGET Boost::system)
+    message(FATAL_ERROR "Fetched Boost did not provide the required CMake targets")
+  endif()
+endif()
+
 if(WIN32)
   # find_package(Boost) used to live in the else() branch alone, so on Windows
   # nothing ever located Boost. The only include path left was ${BOOST_ROOT}
@@ -192,7 +299,6 @@ if(WIN32)
   # and two of them, filesystem and thread, are compiled rather than
   # header-only. Windows linked neither, which would have failed at link time
   # once the headers were finally found.
-  find_package(Boost 1.70 REQUIRED COMPONENTS thread filesystem system)
   target_link_libraries(${LIBRARY_NAME}
     PRIVATE zlib
     PRIVATE ws2_32
@@ -201,7 +307,6 @@ if(WIN32)
     PRIVATE Boost::system
   )
 else()
-  find_package(Boost 1.70 REQUIRED COMPONENTS thread filesystem system)
   target_link_libraries(${LIBRARY_NAME}
     PRIVATE ZLIB::ZLIB
     PRIVATE Boost::thread

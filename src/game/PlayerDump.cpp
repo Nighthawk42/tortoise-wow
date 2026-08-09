@@ -382,7 +382,7 @@ std::string PlayerDumpWriter::GetDump(uint32 guid)
 
     // revision check guard
     /*
-    QueryNamedResult* result = CharacterDatabase.QueryNamed("SELECT * FROM character_db_version LIMIT 1");
+    std::shared_ptr<QueryNamedResult> result = CharacterDatabase.QueryNamed("SELECT * FROM character_db_version LIMIT 1");
     if (result)
     {
         QueryFieldNames const& namesMap = result->GetFieldNames();

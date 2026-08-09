@@ -36,10 +36,16 @@ class ByteBuffer;
 enum LogLevel
 {
     LOG_LVL_MINIMAL = 0,                                    // unconditional and errors
+    LOG_LVL_ERROR   = LOG_LVL_MINIMAL,                      // Eluna compatibility
     LOG_LVL_BASIC   = 1,
     LOG_LVL_DETAIL  = 2,
     LOG_LVL_DEBUG   = 3
 };
+
+// Eluna supplies a log category as its first argument. This core's regular
+// logger is level-based, so the compatibility adapter below intentionally
+// ignores the category instead of indexing the per-feature LogFile array.
+constexpr uint32 LOG_ELUNA = 0;
 
 // bitmask (not forgot update logFilterData content)
 enum LogFilters
@@ -196,6 +202,17 @@ class Log : public MaNGOS::Singleton<Log, MaNGOS::ClassLevelLockable<Log, std::m
 
         void InitSmartlogEntries(std::string const& str);
         void InitSmartlogGuids(std::string const& str);
+
+        template<typename... Args>
+        void Out(uint32 /*category*/, LogLevel level, char const* str, Args... args)
+        {
+            if (level == LOG_LVL_ERROR)
+                outError(str, args...);
+            else if (level == LOG_LVL_DEBUG)
+                outDebug(str, args...);
+            else
+                outString(str, args...);
+        }
 
         void LogDiscord(LogFile type, std::string log);
 

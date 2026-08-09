@@ -240,6 +240,7 @@ class Item : public Object
 {
     public:
         static Item* CreateItem(uint32 item, uint32 count, Player const* player = nullptr);
+        static Item* CreateItem(uint32 item, uint32 count, ObjectGuid const& ownerGuid);
         Item* CloneItem(uint32 count, Player const* player = nullptr) const;
 
         Item();
@@ -260,6 +261,8 @@ class Item : public Object
 
         void SetBinding(bool val) { ApplyModFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BINDED,val); }
         bool IsSoulBound() const { return HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BINDED) || HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOA); }
+        bool IsLocked() const { return !HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_UNLOCKED); }
+        bool IsNotEmptyBag() const;
         bool IsAccountBound() const { return HasFlag(ITEM_FIELD_FLAGS, ITEM_DYNFLAG_BOA); }
         bool IsBindedNotWith(Player const* player) const;
         bool IsBoundByEnchant() const;

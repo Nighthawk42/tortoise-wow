@@ -504,6 +504,29 @@ if(USE_ANTICHEAT)
     )
 endif()
 
+# Official Eluna sources are built directly into the game library. This Turtle
+# fork's object API is closest to Eluna's VMangos adapter (CamelCase Unit APIs,
+# ObjectGuid, and Classic spell structures), despite the core's MaNGOS lineage.
+if(BUILD_ELUNA)
+  file(GLOB ELUNA_CORE_SRCS CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/*.h
+  )
+  file(GLOB ELUNA_HOOK_SRCS CONFIGURE_DEPENDS
+    ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/hooks/*.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/hooks/*.h
+  )
+  list(APPEND game_SRCS
+    ${ELUNA_CORE_SRCS}
+    ${ELUNA_HOOK_SRCS}
+  )
+  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/methods/Methods.cpp)
+    list(APPEND game_SRCS
+      ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/methods/Methods.cpp
+    )
+  endif()
+endif()
+
 
 include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}
@@ -519,6 +542,10 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/Handlers
   ${CMAKE_CURRENT_SOURCE_DIR}/LFG
   ${CMAKE_CURRENT_SOURCE_DIR}/LFT
+  ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine
+  ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/hooks
+  ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/methods
+  ${CMAKE_CURRENT_SOURCE_DIR}/LuaEngine/methods/VMangos
   ${CMAKE_CURRENT_SOURCE_DIR}/Mail
   ${CMAKE_CURRENT_SOURCE_DIR}/MapNodes
   ${CMAKE_CURRENT_SOURCE_DIR}/MapNodes/Handlers
@@ -617,6 +644,16 @@ target_link_libraries(game
   shared
   Detour
 )
+
+if(BUILD_ELUNA)
+  target_compile_definitions(game PUBLIC
+    BUILD_ELUNA
+    ENABLE_ELUNA
+    ELUNA_VMANGOS
+    ELUNA_EXPANSION=0
+  )
+  target_link_libraries(game lualib)
+endif()
 
 if(WIN32)
 	if (ENABLE_PROFILING)

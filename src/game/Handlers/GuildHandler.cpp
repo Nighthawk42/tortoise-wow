@@ -137,6 +137,21 @@ void WorldSession::HandleGuildInviteOpcode(WorldPacket& recvPacket)
     DEBUG_LOG("WORLD: Sent (SMSG_GUILD_INVITE)");
 }
 
+void WorldSession::SendGuildInvite(Player* player)
+{
+    Guild* guild = sGuildMgr.GetGuildById(GetPlayer()->GetGuildId());
+    if (!guild || !player)
+        return;
+
+    player->SetGuildIdInvited(GetPlayer()->GetGuildId());
+    guild->LogGuildEvent(GUILD_EVENT_LOG_INVITE_PLAYER, GetPlayer()->GetObjectGuid(), player->GetObjectGuid());
+
+    WorldPacket data(SMSG_GUILD_INVITE, 18);
+    data << GetPlayer()->GetName();
+    data << guild->GetName();
+    player->GetSession()->SendPacket(&data);
+}
+
 void WorldSession::HandleGuildRemoveOpcode(WorldPacket& recvPacket)
 {
     DEBUG_LOG("WORLD: Received CMSG_GUILD_REMOVE");

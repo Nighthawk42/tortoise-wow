@@ -56,6 +56,11 @@
 #include "MovementBroadcaster.h"
 #include "PlayerBroadcaster.h"
 
+#ifdef ENABLE_ELUNA
+#include "LuaEngine.h"
+#include "ElunaEventMgr.h"
+#endif
+
 #include "Autoscaling/AutoScaler.hpp"
 
 ////////////////////////////////////////////////////////////
@@ -2050,6 +2055,32 @@ Map* WorldObject::GetMap() const
     MANGOS_ASSERT(m_currMap);
     return m_currMap;
 }
+
+WorldObject::~WorldObject() = default;
+
+#ifdef ENABLE_ELUNA
+Eluna* WorldObject::GetEluna() const
+{
+    return IsInWorld() && m_currMap ? m_currMap->GetEluna() : nullptr;
+}
+
+ElunaEventProcessor* WorldObject::GetElunaEvents(int32 mapId)
+{
+    Eluna* eluna = mapId == -1 ? sWorld.GetEluna() : GetEluna();
+    if (!eluna || !eluna->eventMgr)
+        return nullptr;
+
+    EventMgr* manager = eluna->eventMgr.get();
+    std::unique_ptr<ElunaProcessorInfo>& info = mapId == -1 ? elunaWorldEvents : elunaMapEvents;
+    if (!info)
+    {
+        uint64 processorId = manager->CreateObjectProcessor(this);
+        info = std::make_unique<ElunaProcessorInfo>(manager, processorId);
+    }
+
+    return manager->GetObjectProcessor(info->GetProcessorId());
+}
+#endif
 
 void WorldObject::ResetMap()
 {

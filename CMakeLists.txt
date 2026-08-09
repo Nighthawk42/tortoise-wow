@@ -51,6 +51,18 @@ option(ALLOW_TURTLE_ADDONS "Allow Turtle addons" ON)
 # When ON, mangosd links the bot subsystem; runtime activation is gated by
 # AiPlayerbot.Enabled in aiplayerbot.conf.
 option(BUILD_PLAYERBOTS "Build the cmangos/playerbots subsystem" OFF)
+option(BUILD_ELUNA "Build the required Eluna Lua scripting engine" OFF)
+option(PLAYERBOTS_FETCH_BOOST
+  "Download the pinned Boost release when playerbot dependencies are not installed"
+  ON)
+
+# Playerbots and the AI sidecar contract rely on Eluna for the in-process,
+# server-authoritative scripting boundary.  Keep standalone non-bot builds
+# available, but never permit a playerbot build without Eluna.
+if(BUILD_PLAYERBOTS AND NOT BUILD_ELUNA)
+  message(STATUS "BUILD_PLAYERBOTS=ON requires Eluna; forcing BUILD_ELUNA=ON")
+  set(BUILD_ELUNA ON CACHE BOOL "Build the required Eluna Lua scripting engine" FORCE)
+endif()
 
 
 if(UNIX)
@@ -140,9 +152,11 @@ if(WIN32)
     endif()
   endif()
   
-  # Added by Giperion, in WIN32 output all compiled files in one directory
-  set( CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin )
-  set( CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/lib )
+  # Keep generated artifacts out of the source checkout. Multi-config
+  # generators will place configuration-specific files below these folders;
+  # `cmake --install` then assembles the runnable tree under PREFIX/bin.
+  set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
+  set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib)
   # Allow creating folders in solution
   set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 endif()
@@ -202,11 +216,14 @@ else()
   set(PREFIX ${CMAKE_INSTALL_PREFIX} CACHE PATH "Install path prefix.")
 endif()
 
-# If win32 put it in the bin dir not lib
+# Keep source, generated builds, configuration, and the runnable Windows server
+# separate. Windows loads dependent DLLs from the executable directory, so
+# runtime libraries belong in bin rather than in a detached lib directory that
+# requires a hand-edited PATH.
 if(WIN32)
-  set(BIN_DIR ${CMAKE_INSTALL_PREFIX})
-  set(CONF_DIR ${CMAKE_INSTALL_PREFIX})
-  set(LIBS_DIR ${CMAKE_INSTALL_PREFIX})
+  set(BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin)
+  set(CONF_DIR ${CMAKE_INSTALL_PREFIX}/config)
+  set(LIBS_DIR ${CMAKE_INSTALL_PREFIX}/bin)
 else()
   set(BIN_DIR ${CMAKE_INSTALL_PREFIX}/bin)
   set(CONF_DIR ${CMAKE_INSTALL_PREFIX}/etc)
@@ -517,7 +534,7 @@ if(WIN32)
       ${CMAKE_SOURCE_DIR}/dep/windows/lib/${DEP_ARCH}_release/libeay32.dll
       ${CMAKE_SOURCE_DIR}/dep/windows/lib/${DEP_ARCH}_release/libmySQL.dll
     DESTINATION ${LIBS_DIR}
-    CONFIGURATIONS Release
+    CONFIGURATIONS Release RelWithDebInfo
   )
   install(
     FILES
@@ -544,7 +561,7 @@ if(WIN32)
         ${CMAKE_SOURCE_DIR}/dep/windows/lib/${DEP_ARCH}_release/libssl-1_1${BUNDLED_SSL_SUFFIX}.dll
         ${CMAKE_SOURCE_DIR}/dep/windows/lib/${DEP_ARCH}_release/libcrypto-1_1${BUNDLED_SSL_SUFFIX}.dll
       DESTINATION ${LIBS_DIR}
-      CONFIGURATIONS Release
+      CONFIGURATIONS Release RelWithDebInfo
       OPTIONAL
     )
     install(
@@ -562,7 +579,7 @@ if(WIN32)
       FILES
         ${CMAKE_SOURCE_DIR}/dep/windows/lib/win32_release/dbghelp.dll
       DESTINATION ${LIBS_DIR}
-      CONFIGURATIONS Release
+      CONFIGURATIONS Release RelWithDebInfo
     )
     install(
       FILES
@@ -570,6 +587,20 @@ if(WIN32)
       DESTINATION ${LIBS_DIR}
       CONFIGURATIONS Debug
     )
+  endif()
+
+  # ACE is linked dynamically on Windows. Install its runtime beside mangosd
+  # and realmd so a clean deployment does not depend on the developer's PATH.
+  find_file(ACE_RUNTIME_DLL
+    NAMES ACE.dll
+    HINTS
+      ${ACE_LIBRARIES_DIR}
+      ${ACE_ROOT}/lib
+    NO_DEFAULT_PATH)
+  if(ACE_RUNTIME_DLL)
+    install(FILES ${ACE_RUNTIME_DLL} DESTINATION ${LIBS_DIR})
+  else()
+    message(WARNING "ACE.dll was not found; the installed Windows server will require it beside the executable")
   endif()
 endif()
 
@@ -592,9 +623,14 @@ set(DEFINITIONS
 if(WIN32)
   set(DEFINITIONS ${DEFINITIONS} WIN32 _WIN32)
   set(DEFINITIONS ${DEFINITIONS} _CRT_SECURE_NO_WARNINGS)
-else()
-  set(DEFINITIONS ${DEFINITIONS} SYSCONFDIR="${CONF_DIR}/")
 endif()
+
+# Use the installed config directory on every platform. Historically Windows
+# left SYSCONFDIR empty and depended on whichever directory happened to be the
+# process working directory, which also made playerbot/ahbot configs fragile.
+file(TO_CMAKE_PATH "${CONF_DIR}" SYSCONFDIR_NORMALIZED)
+string(APPEND SYSCONFDIR_NORMALIZED "/")
+set(DEFINITIONS ${DEFINITIONS} SYSCONFDIR="${SYSCONFDIR_NORMALIZED}")
 
 if(USE_STD_MALLOC)
   set(DEFINITIONS ${DEFINITIONS} USE_STANDARD_MALLOC)
@@ -616,6 +652,30 @@ message(STATUS "Build flags (RELEASE) : ${CMAKE_CXX_FLAGS_RELEASE}")
 message(STATUS "Build flags (DEBUG)   : ${CMAKE_CXX_FLAGS_DEBUG}")
 
 
+# Eluna is compiled into game, so its Lua target must exist before src/game is
+# configured.  The remaining third-party dependencies retain their historical
+# position after src.
+if(BUILD_ELUNA)
+  if(NOT EXISTS "${CMAKE_SOURCE_DIR}/src/game/LuaEngine/LuaEngine.cpp")
+    message(FATAL_ERROR
+      "BUILD_ELUNA requires the pinned Eluna submodule. Run: "
+      "git submodule update --init --recursive src/game/LuaEngine")
+  endif()
+  add_subdirectory(dep/lualib)
+  install(
+    FILES ${CMAKE_SOURCE_DIR}/tools/eluna/ai-bot-smoke.lua
+    DESTINATION ${CMAKE_INSTALL_PREFIX}/lua_scripts
+  )
+endif()
+
+if(USE_ANTICHEAT)
+  install(
+    FILES ${CMAKE_SOURCE_DIR}/src/game/Anticheat/anticheat.conf.readonly
+    DESTINATION ${CONF_DIR}
+    RENAME anticheat.conf.dist
+  )
+endif()
+
 add_subdirectory(src)
 add_subdirectory(dep)
 
@@ -633,6 +693,13 @@ if (BUILD_PLAYERBOTS)
     #   ENABLE_PLAYERBOTS - turns the subsystem on inside the vendor tree's
     #                       own ifdef walls.
     target_compile_definitions(playerbots PRIVATE CMANGOS MANGOSBOT_ZERO ENABLE_PLAYERBOTS)
+    target_compile_definitions(playerbots PRIVATE
+        BUILD_ELUNA ENABLE_ELUNA ELUNA_VMANGOS ELUNA_EXPANSION=0
+    )
+    # PlayerbotAI includes Eluna's public headers when Eluna support is enabled.
+    # Linking the Lua target propagates the pinned Lua include directory and
+    # keeps that dependency tied to the target instead of duplicating its path.
+    target_link_libraries(playerbots PUBLIC lualib)
     target_include_directories(playerbots PUBLIC
         ${CMAKE_SOURCE_DIR}/src/modules/PlayerBots/cmangos-compat-stubs
         ${CMAKE_SOURCE_DIR}/src/game
@@ -646,6 +713,9 @@ if (BUILD_PLAYERBOTS)
         ${CMAKE_SOURCE_DIR}/src/game/Guild
         ${CMAKE_SOURCE_DIR}/src/game/Handlers
         ${CMAKE_SOURCE_DIR}/src/game/LFG
+        ${CMAKE_SOURCE_DIR}/src/game/LuaEngine
+        ${CMAKE_SOURCE_DIR}/src/game/LuaEngine/hooks
+        ${CMAKE_SOURCE_DIR}/src/game/LuaEngine/methods
         ${CMAKE_SOURCE_DIR}/src/game/Mail
         ${CMAKE_SOURCE_DIR}/src/game/Maps
         ${CMAKE_SOURCE_DIR}/src/game/Maps/Pool

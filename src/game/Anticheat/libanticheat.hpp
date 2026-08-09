@@ -17,11 +17,7 @@
 #include <atomic>
 #include <mutex>
 
-#if PLATFORM == PLATFORM_WINDOWS
-  #define _LIB_ANTICHEAT_CONFIG  "anticheat.conf"
-#else
-  #define _LIB_ANTICHEAT_CONFIG  SYSCONFDIR "anticheat.conf"
-#endif
+#define _LIB_ANTICHEAT_CONFIG  SYSCONFDIR "anticheat.conf"
 
 class WorldSession;
 class Warden;

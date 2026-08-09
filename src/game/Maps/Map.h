@@ -70,6 +70,9 @@ class BattleGround;
 class GridMap;
 class WeatherSystem;
 class Transport;
+#ifdef ENABLE_ELUNA
+class Eluna;
+#endif
 
 namespace VMAP
 {
@@ -371,6 +374,9 @@ class Map : public GridRefManager<NGridType>
         void UpdatePlayers();
         void DoUpdate(uint32 maxDiff);
         virtual void Update(uint32);
+#ifdef ENABLE_ELUNA
+        Eluna* GetEluna() const { return m_eluna; }
+#endif
         void UpdateSessionsMovementAndSpellsIfNeeded();
         void ProcessSessionPackets(PacketProcessing type);
 
@@ -797,6 +803,10 @@ class Map : public GridRefManager<NGridType>
 
         // WeatherSystem
         WeatherSystem* m_weatherSystem;
+
+#ifdef ENABLE_ELUNA
+        Eluna* m_eluna = nullptr;
+#endif
 
         // Creature summon limit
         std::unordered_map<uint64, uint32> m_mCreatureSummonLimit;

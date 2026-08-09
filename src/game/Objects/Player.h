@@ -1550,6 +1550,8 @@ class Player final: public Unit
         void UpdateForQuestWorldObjects();
         bool CanShareQuest(uint32 quest_id) const;
         QuestStatusMap& getQuestStatusMap() { return mQuestStatus; };
+        QuestStatusMap& GetQuestStatusMap() { return mQuestStatus; }
+        QuestStatusMap const& GetQuestStatusMap() const { return mQuestStatus; }
 
         void SendQuestCompleteEvent(uint32 quest_id) const;
         void SendQuestReward(Quest const* pQuest, uint32 XP, Object* questGiver) const;
@@ -1755,8 +1757,9 @@ class Player final: public Unit
 
     public:
         void UpdateFreeTalentPoints(bool resetIfNeed = true);
-    private:
+    public:
         uint32 GetResetTalentsCost() const;
+    private:
         void UpdateResetTalentsMultiplier() const;
         // moved to public; bot's Talentspec.h
         // calls this on bot Player instances. No encapsulation concern (pure getter).
@@ -1796,8 +1799,12 @@ class Player final: public Unit
         void RegenerateHealth();
         void HandleFoodEmotes(uint32 diff);
 
+    public:
         static float GetHealthBonusFromStamina(float stamina);
         static float GetManaBonusFromIntellect(float intellect);
+        float GetHealthBonusFromStamina() const { return GetHealthBonusFromStamina(GetStat(STAT_STAMINA)); }
+        float GetManaBonusFromIntellect() const { return GetManaBonusFromIntellect(GetStat(STAT_INTELLECT)); }
+    private:
         float GetMeleeCritFromAgility() const;
         float GetDodgeFromAgility() const;
         float GetSpellCritFromIntellect() const;
@@ -2944,7 +2951,7 @@ public:
         uint8 GetChatTag() const;
 
         char const* GetName() const final { return m_name.c_str(); }
-        void SetName(std::string const& newname) { m_name = newname; }
+        void SetName(std::string const& newname) override { m_name = newname; }
 
         float GetYellRange() const;
         void Say(std::string const& text, const uint32 language) const;
