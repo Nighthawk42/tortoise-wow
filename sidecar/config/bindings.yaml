@@ -2,6 +2,15 @@ schema_version: 1
 server_id: turtle-dev
 realm_id: 1
 bindings:
+  - character_guid_low: 2
+    expected_character_name: Alaura
+    archetype_id: archetypes.troll.hunter
+    stable_seed: 42002
+    enabled: true
+    character_overlay:
+      status: generated
+      current_role: damage
+      seriousness: 0.44
   - character_guid_low: 4821
     expected_character_name: Mirae
     persona_id: players.mirae
@@ -19,4 +28,3 @@ bindings:
       status: generated
       current_role: damage
       seriousness: 0.48
-

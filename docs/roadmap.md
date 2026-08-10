@@ -27,8 +27,9 @@ Exit criteria:
 
 ## Phase 1: dialogue sidecar vertical slice
 
-Status: in progress. The provider adapter and bounded C++ gateway are built and
-contract-tested; live in-game whisper and outage validation remain.
+Status: in progress. The provider adapter and bounded C++ gateway are built,
+installed, contract-tested, and outage-validated. The final in-game emission
+check awaits a logged-in human player session.
 
 - [x] Scaffold FastAPI service with `/health/*`, `/v1/dialogue`, and
   `/v1/outcomes`.

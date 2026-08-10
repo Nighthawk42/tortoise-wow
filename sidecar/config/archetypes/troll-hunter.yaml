@@ -1,0 +1,26 @@
+schema_version: 1
+kind: player_archetype
+id: archetypes.troll.hunter
+selection:
+  race: troll
+  class: hunter
+generation:
+  profile_id_prefix: generated.troll.hunter
+  stable_seed_required: true
+  traits:
+    experience: {min: 0.20, max: 0.82}
+    mechanical_skill: {min: 0.28, max: 0.84}
+    sociability: {min: 0.22, max: 0.78}
+    risk_tolerance: {min: 0.28, max: 0.72}
+  weighted_preferences:
+    - {value: questing, weight: 5}
+    - {value: dungeons, weight: 4}
+    - {value: professions, weight: 2}
+    - {value: battlegrounds, weight: 2}
+  communication_styles:
+    - {value: quiet and direct, weight: 3}
+    - {value: friendly casual, weight: 5}
+    - {value: playful, weight: 2}
+  model:
+    profile: dialogue-small
+    temperature: {min: 0.62, max: 0.90}

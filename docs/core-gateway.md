@@ -77,3 +77,28 @@ without loading those profiles into MaNGOS.
 serialization, omission of persona IDs, response correlation, malformed JSON,
 byte limits, and outcome serialization. The normal `mangosd` target compiles
 and links the complete worker and world-thread integration.
+
+## 2026-08-10 runtime deployment
+
+Commit `4e0cc07` was built, installed, and started from the organized Windows
+runtime. The sidecar loaded an explicit binding for online character GUID `2`,
+`Alaura` (Troll Hunter), and materialized persona
+`generated.troll.hunter.2` from the generic Troll/Hunter archetype.
+
+The deployment checks established:
+
+- all four launcher services were healthy;
+- Eluna loaded the smoke script and received world-startup event 14;
+- a live dialogue request without `persona_id` resolved Alaura's binding and
+  returned a 20-byte `chat.text` candidate;
+- an already-expired request returned typed `deadline_expired` failure;
+- provider timeout and malformed-output tests passed;
+- the production C++ response parser rejected malformed JSON, invalid UTF-8,
+  a mismatched request UUID, and oversized output; and
+- while the sidecar listener was deliberately absent for five seconds, the
+  same `mangosd` PID remained listening, continued accumulating CPU time, and
+  all nine online characters stayed online. The sidecar then returned healthy.
+
+The probe reported `bot_unavailable` rather than falsely recording `emitted`:
+no real player client was logged in during automation. A human client must log
+in and whisper Alaura to complete the final world-thread emission proof.

@@ -17,8 +17,8 @@ def test_health_reports_loaded_registry(client: TestClient) -> None:
     assert ready.status_code == 200
     body = ready.json()
     assert body["status"] == "ready"
-    assert body["profiles"] == 2
-    assert body["bindings"] == 2
+    assert body["profiles"] == 3
+    assert body["bindings"] == 3
     assert body["registry_revision"].startswith("sha256:")
     assert body["metrics"]["requests"] == 0
     assert body["metrics"]["in_flight"] == 0
