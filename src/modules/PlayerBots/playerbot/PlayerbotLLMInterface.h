@@ -6,6 +6,7 @@ class PlayerbotLLMInterface
 {
 public:
     PlayerbotLLMInterface() {}
+    static std::string NormalizeUtf8(const std::string& input);
     static std::string SanitizeForJson(const std::string& input);
 
     static std::string Generate(const std::string& prompt, int timeOutSeconds, int maxGenerations, std::vector<std::string>& debugLines);

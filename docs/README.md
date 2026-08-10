@@ -13,6 +13,7 @@ state. Existing playerbot strategies continue to make those decisions.
 - [How the current playerbots work](playerbots-current-system.md)
 - [Target sidecar architecture](architecture.md)
 - [Sidecar API contract](sidecar-api.md)
+- [C++ dialogue gateway](core-gateway.md)
 - [Runnable sidecar scaffold](../sidecar/README.md)
 - [LLM provider adapter and prompt compiler](provider-adapter.md)
 - [Windows launcher dashboard](../launcher/README.md)
@@ -50,8 +51,11 @@ state. Existing playerbot strategies continue to make those decisions.
 - The Python launcher dashboard manages the database, realm server, sidecar,
   and world server in dependency order with PID/port health, verified process
   ownership, graceful shutdown, and organized live logs.
-- The real provider adapter, core gateway transport, custom playerbot Lua
-  bindings, and memory adapters remain later slices described in the roadmap.
+- The OpenAI-compatible provider adapter and bounded C++ dialogue gateway are
+  implemented. A real-player whisper can travel through the sidecar and return
+  only as validated text on the bot update thread.
+- Live in-game whisper/outage validation, custom playerbot Lua bindings, and
+  memory adapters remain later slices described in the roadmap.
 
 ## Terminology
 

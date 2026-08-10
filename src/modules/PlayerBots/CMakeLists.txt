@@ -317,6 +317,7 @@ endif()
 
 target_include_directories(${LIBRARY_NAME}
   PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+  PRIVATE ${CMAKE_SOURCE_DIR}/dep/include
   # include paths for transitive Penqle headers
   # (MapNodes/AbstractPlayer.h, Detour navmesh, framework Network).
   PRIVATE ${CMAKE_SOURCE_DIR}/src/game/MapNodes
@@ -351,6 +352,18 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ahbot/ahbot.conf.dist.in ${CMAKE_CURR
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/ahbot.conf.dist DESTINATION ${CONF_INSTALL_DIR})
 
 set_target_properties(${LIBRARY_NAME} PROPERTIES PROJECT_LABEL "PlayerBots")
+
+option(PLAYERBOTS_BUILD_GATEWAY_TESTS "Build the standalone playerbot sidecar contract tests" OFF)
+if(PLAYERBOTS_BUILD_GATEWAY_TESTS)
+  add_executable(playerbot_dialogue_contract_tests
+    ${CMAKE_CURRENT_SOURCE_DIR}/tests/PlayerbotDialogueContractTests.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/playerbot/PlayerbotDialogueContract.cpp)
+  target_include_directories(playerbot_dialogue_contract_tests PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}/playerbot
+    ${CMAKE_SOURCE_DIR}/dep/include)
+  set_target_properties(playerbot_dialogue_contract_tests PROPERTIES
+    PROJECT_LABEL "PlayerBots Dialogue Contract Tests")
+endif()
 
 # Generate PCH
 if(PCH)

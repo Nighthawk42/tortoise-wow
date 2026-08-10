@@ -754,6 +754,46 @@ bool PlayerbotAIConfig::Initialize()
         LoadLLMDefaultPrompts(promptsFile);
     }
 
+    sidecarEnabled = config.GetBoolDefault("AiPlayerbot.SidecarEnabled", false);
+    sidecarEndpoint = config.GetStringDefault(
+        "AiPlayerbot.SidecarEndpoint", "http://127.0.0.1:8100/v1/dialogue");
+    sidecarServerId = config.GetStringDefault("AiPlayerbot.SidecarServerId", "turtle-dev");
+    sidecarServiceToken = config.GetStringDefault("AiPlayerbot.SidecarServiceToken", "");
+    sidecarRequestTimeoutMs = static_cast<uint32>(std::max<int32>(100, std::min<int32>(
+        config.GetIntDefault("AiPlayerbot.SidecarRequestTimeoutMs", 8000), 60000)));
+    sidecarQueueCapacity = static_cast<uint32>(std::max<int32>(1, std::min<int32>(
+        config.GetIntDefault("AiPlayerbot.SidecarQueueCapacity", 64), 1024)));
+    sidecarMaxPendingPerBot = static_cast<uint32>(std::max<int32>(1, std::min<int32>(
+        config.GetIntDefault("AiPlayerbot.SidecarMaxPendingPerBot", 1), 8)));
+    sidecarWorkerCount = static_cast<uint32>(std::max<int32>(1, std::min<int32>(
+        config.GetIntDefault("AiPlayerbot.SidecarWorkerCount", 2), 8)));
+    sidecarPlayerCooldownMs = static_cast<uint32>(std::max<int32>(0, std::min<int32>(
+        config.GetIntDefault("AiPlayerbot.SidecarPlayerCooldownMs", 5000), 600000)));
+    try
+    {
+        sidecarEndpointUrl = parseUrl(sidecarEndpoint);
+        if (sidecarEndpointUrl.https)
+        {
+            sLog.outError("AiPlayerbot.SidecarEndpoint currently supports HTTP only");
+            sidecarEnabled = false;
+        }
+        else if (sidecarEndpointUrl.port < 1 || sidecarEndpointUrl.port > 65535)
+        {
+            sLog.outError("AiPlayerbot.SidecarEndpoint has an invalid port");
+            sidecarEnabled = false;
+        }
+        if (sidecarServerId.empty() || sidecarServerId.size() > 255)
+        {
+            sLog.outError("AiPlayerbot.SidecarServerId must contain 1-255 characters");
+            sidecarEnabled = false;
+        }
+    }
+    catch (const std::invalid_argument& e)
+    {
+        sLog.outError("Unable to parse SidecarEndpoint url: %s", e.what());
+        sidecarEnabled = false;
+    }
+
     // Gear progression system
     gearProgressionSystemEnabled = config.GetBoolDefault("AiPlayerbot.GearProgressionSystem.Enable", false);
 

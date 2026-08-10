@@ -232,9 +232,7 @@ namespace
 
 std::string PlayerbotLLMInterface::SanitizeForJson(const std::string& input)
 {
-    // If input is not valid UTF-8, assume Win-1251 (WoW 1.12.1 client encoding)
-    bool inputIsUtf8 = IsValidUtf8(input);
-    const std::string src = inputIsUtf8 ? input : Win1251ToUtf8(input);
+    const std::string src = NormalizeUtf8(input);
 
     std::string sanitized;
     sanitized.reserve(src.size());
@@ -260,6 +258,12 @@ std::string PlayerbotLLMInterface::SanitizeForJson(const std::string& input)
         }
     }
     return sanitized;
+}
+
+std::string PlayerbotLLMInterface::NormalizeUtf8(const std::string& input)
+{
+    // The 1.12.1 client can send Win-1251. The sidecar contract is always UTF-8.
+    return IsValidUtf8(input) ? input : Win1251ToUtf8(input);
 }
 
 inline void SetNonBlockingSocket(int sock) {

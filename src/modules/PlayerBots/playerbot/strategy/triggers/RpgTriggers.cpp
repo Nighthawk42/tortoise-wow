@@ -626,7 +626,10 @@ bool RpgQuestUseTrigger::IsActive()
 
 bool RpgAIChatTrigger::IsActive()
 {
-    if (sPlayerbotAIConfig.llmEnabled == 0)
+    // Ambient/NPC dialogue is not part of the first sidecar contract slice.
+    // Do not fall through to the deprecated direct-provider task while the
+    // sidecar is authoritative.
+    if (sPlayerbotAIConfig.sidecarEnabled || sPlayerbotAIConfig.llmEnabled == 0)
         return false;
 
     if (FarFromRpgTargetTrigger::IsActive())

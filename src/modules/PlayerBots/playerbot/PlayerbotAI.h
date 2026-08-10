@@ -363,6 +363,7 @@ public:
 	virtual ~PlayerbotAI();
 
     virtual void UpdateAI(uint32 elapsed, bool minimal = false);
+    uint64 GetDialogueContextId() const { return dialogueContextId; }
 
     void HandleCommands();
 private:
@@ -767,9 +768,11 @@ public:
 private:
     bool UpdateAIReaction(uint32 elapsed, bool minimal, bool isStunned);
     void UpdateFaceTarget(uint32 elapsed, bool minimal);
+    void ProcessDialogueResponses();
 
 protected:
 	Player* bot;
+    uint64 dialogueContextId;
 	Player* master;
 	uint8 m_forcedRole = 0;
 	// GUID-shadow of `master` so we can verify the pointer is still

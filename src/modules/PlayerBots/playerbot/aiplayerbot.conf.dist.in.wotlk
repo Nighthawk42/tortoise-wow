@@ -1042,6 +1042,22 @@ AiPlayerbot.PerfMonEnabled = 0
 # AiPlayerbot.DiffWithPlayer = 100
 # AiPlayerbot.DiffEmpty = 200
 
+# Dialogue sidecar. This is the supported LLM path: MaNGOS sends bounded
+# gameplay snapshots to a local service, while provider credentials, persona
+# prompts, and memory remain outside the game process. HTTP loopback only in
+# this first transport version; put TLS at a local reverse proxy if needed.
+AiPlayerbot.SidecarEnabled = 0
+AiPlayerbot.SidecarEndpoint = http://127.0.0.1:8100/v1/dialogue
+AiPlayerbot.SidecarServerId = turtle-dev
+AiPlayerbot.SidecarServiceToken =
+AiPlayerbot.SidecarRequestTimeoutMs = 8000
+AiPlayerbot.SidecarQueueCapacity = 64
+AiPlayerbot.SidecarMaxPendingPerBot = 1
+AiPlayerbot.SidecarWorkerCount = 2
+AiPlayerbot.SidecarPlayerCooldownMs = 5000
+
+# Legacy direct-provider LLM values. Deprecated; kept disabled for migration
+# compatibility. New deployments should use AiPlayerbot.Sidecar* above.
 # LLM values. These values are for noncombat strategy 'ai chat' which allows bots to reply using a LLM api.
 # For a quickstart download koboldcpp, a 7b model from huggingface and start kobold.
 # (Default) KoboldCPP examples:

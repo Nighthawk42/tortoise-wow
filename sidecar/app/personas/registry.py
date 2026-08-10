@@ -144,7 +144,7 @@ class PersonaRegistry:
         if binding.expected_character_name.casefold() != request.bot.name.casefold():
             raise RegistryError(ErrorCode.POLICY_DENIED, "bound character name does not match")
         if binding.persona_id:
-            if request.bot.persona_id != binding.persona_id:
+            if request.bot.persona_id is not None and request.bot.persona_id != binding.persona_id:
                 raise RegistryError(
                     ErrorCode.POLICY_DENIED, "requested persona does not match binding"
                 )
@@ -199,7 +199,7 @@ class PersonaRegistry:
         ):
             raise RegistryError(ErrorCode.POLICY_DENIED, "bot race/class does not match archetype")
         generated_id = f"{archetype.generation.profile_id_prefix}.{binding.character_guid_low}"
-        if bot.persona_id != generated_id:
+        if bot.persona_id is not None and bot.persona_id != generated_id:
             raise RegistryError(
                 ErrorCode.POLICY_DENIED, "generated persona id does not match binding"
             )

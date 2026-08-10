@@ -27,8 +27,8 @@ Exit criteria:
 
 ## Phase 1: dialogue sidecar vertical slice
 
-Status: in progress. The standalone contract scaffold is implemented and
-tested; provider and core-gateway integration remain.
+Status: in progress. The provider adapter and bounded C++ gateway are built and
+contract-tested; live in-game whisper and outage validation remain.
 
 - [x] Scaffold FastAPI service with `/health/*`, `/v1/dialogue`, and
   `/v1/outcomes`.
@@ -36,8 +36,9 @@ tested; provider and core-gateway integration remain.
 - [x] Implement one OpenAI-compatible provider adapter and bounded prompt compiler.
 - [x] Implement hand-crafted profiles, race/class system archetypes, stable seeded
   materialization, schema validation, and explicit roster bindings.
-- [ ] Add a bounded C++ gateway worker and response queue.
-- [ ] Replace the legacy direct `PlayerbotLLMInterface::Generate` path with gateway
+- [x] Add a bounded C++ gateway worker and response queue.
+- [x] Replace the production whisper use of the legacy direct
+  `PlayerbotLLMInterface::Generate` path with gateway
   enqueue/result consumption.
 - [x] Allow only `chat.text` output.
 - [x] Add timeouts, rate limits, cancellation, and structured metrics.

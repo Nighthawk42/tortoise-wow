@@ -62,6 +62,19 @@ def test_binding_mismatch_is_rejected(
     assert response.json()["error"]["code"] == "policy_denied"
 
 
+def test_core_can_resolve_binding_without_knowing_persona_id(
+    client: TestClient, dialogue_request: dict[str, object]
+) -> None:
+    request = deepcopy(dialogue_request)
+    request["request_id"] = str(uuid4())
+    del request["bot"]["persona_id"]  # type: ignore[index]
+
+    response = client.post("/v1/dialogue", json=request)
+
+    assert response.json()["status"] == "completed"
+    assert response.json()["persona"]["id"] == "players.mirae"
+
+
 def test_outcome_is_accepted(client: TestClient, dialogue_request: dict[str, object]) -> None:
     client.post("/v1/dialogue", json=dialogue_request)
     outcome = {

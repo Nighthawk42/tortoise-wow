@@ -43,6 +43,7 @@
 #include "Guild/GuildMgr.h"
 #include "Chat/ChannelMgr.h"
 #include "PlayerbotLLMInterface.h"
+#include "PlayerbotDialogueGateway.h"
 
 #include <boost/algorithm/string.hpp>
 
@@ -114,7 +115,7 @@ void PacketHandlingHelper::AddPacket(const WorldPacket& packet)
 }
 
 PlayerbotAI::PlayerbotAI() : PlayerbotAIBase(), bot(NULL), aiObjectContext(NULL),
-    currentEngine(NULL), chatHelper(this), chatFilter(this), accountId(0), security(NULL), master(NULL), currentState(BotState::BOT_STATE_NON_COMBAT), faceTargetUpdateDelay(0), jumpTime(0), fallAfterJump(false)
+    dialogueContextId(PlayerbotDialogueGateway::NextContextId()), currentEngine(NULL), chatHelper(this), chatFilter(this), accountId(0), security(NULL), master(NULL), currentState(BotState::BOT_STATE_NON_COMBAT), faceTargetUpdateDelay(0), jumpTime(0), fallAfterJump(false)
 {
     for (uint8 i = 0 ; i < (uint8)BotState::BOT_STATE_ALL; i++)
         engines[i] = NULL;
@@ -127,7 +128,7 @@ PlayerbotAI::PlayerbotAI() : PlayerbotAIBase(), bot(NULL), aiObjectContext(NULL)
 }
 
 PlayerbotAI::PlayerbotAI(Player* bot) :
-    PlayerbotAIBase(), chatHelper(this), chatFilter(this), security(bot), master(NULL), faceTargetUpdateDelay(0), jumpTime(0), fallAfterJump(false)
+    PlayerbotAIBase(), dialogueContextId(PlayerbotDialogueGateway::NextContextId()), chatHelper(this), chatFilter(this), security(bot), master(NULL), faceTargetUpdateDelay(0), jumpTime(0), fallAfterJump(false)
 {
     this->bot = bot;
     if (!bot->isTaxiCheater() && HasCheat(BotCheatMask::taxi))
@@ -261,6 +262,8 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
     auto pmo = sPerformanceMonitor.start(PERF_MON_TOTAL, "PlayerbotAI::UpdateAI " + mapString, nullptr, bot->GetMapId(), bot->GetInstanceId());
 
     SC_PHASE("UpdateAI.entry", bot ? bot->GetName() : "(null)");
+
+    ProcessDialogueResponses();
 
     // revalidate the
     // cached master pointer against ObjectAccessor BEFORE any code
@@ -683,6 +686,51 @@ void PlayerbotAI::UpdateAI(uint32 elapsed, bool minimal)
         YieldAIInternalThread(min);
     }
     SC_PHASE("UpdateAI.exit", bot ? bot->GetName() : "(null)");
+}
+
+void PlayerbotAI::ProcessDialogueResponses()
+{
+    if (!bot)
+        return;
+
+    PlayerbotDialogueResponse response;
+    for (std::size_t count = 0;
+         count < 4 && sPlayerbotDialogueGateway.TryTake(bot->GetGUIDLow(), response);
+         ++count)
+    {
+        if (response.contextId != dialogueContextId)
+        {
+            sPlayerbotDialogueGateway.ReportOutcome(
+                response.requestId, "context_changed", "bot_ai_instance_changed");
+            continue;
+        }
+        if (std::chrono::system_clock::now() > response.deadline)
+        {
+            sPlayerbotDialogueGateway.ReportOutcome(
+                response.requestId, "expired", "world_thread_delivery_deadline_elapsed");
+            continue;
+        }
+        if (!bot->IsInWorld() || !bot->GetSession())
+        {
+            sPlayerbotDialogueGateway.ReportOutcome(
+                response.requestId, "bot_unavailable", "bot_not_in_world");
+            continue;
+        }
+
+        Player* speaker = sObjectAccessor.FindPlayer(ObjectGuid(HIGHGUID_PLAYER, response.speakerGuid));
+        if (!speaker || speaker->GetName() != response.speakerName)
+        {
+            sPlayerbotDialogueGateway.ReportOutcome(
+                response.requestId, "context_changed", "speaker_session_changed");
+            continue;
+        }
+
+        const bool emitted = Whisper(response.text, response.speakerName, true);
+        sPlayerbotDialogueGateway.ReportOutcome(
+            response.requestId,
+            emitted ? "emitted" : "policy_rejected",
+            emitted ? std::string() : "core_whisper_rejected");
+    }
 }
 
 bool PlayerbotAI::UpdateAIReaction(uint32 elapsed, bool minimal, bool isStunned)

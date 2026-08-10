@@ -33,7 +33,7 @@ class DialogueEvent(StrictModel):
 
 class BotSnapshot(StrictModel):
     actor_id: ActorId
-    persona_id: Annotated[str, Field(min_length=3, max_length=160)]
+    persona_id: Annotated[str, Field(min_length=3, max_length=160)] | None = None
     character_guid_low: int | None = Field(default=None, ge=1)
     name: ShortText
     level: int = Field(ge=1, le=255)

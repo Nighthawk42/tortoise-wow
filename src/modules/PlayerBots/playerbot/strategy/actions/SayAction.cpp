@@ -8,6 +8,7 @@
 #include <regex>
 #include <boost/algorithm/string.hpp>
 #include "playerbot/PlayerbotLLMInterface.h"
+#include "playerbot/PlayerbotDialogueGateway.h"
 
 using namespace ai;
 
@@ -509,7 +510,41 @@ void ChatReplyAction::ChatReplyDo(Player* bot, uint32 type, uint32 guid1, uint32
         return;
     }
 
-    if (bot->GetPlayerbotAI() && sPlayerbotAIConfig.llmEnabled > 0 && (bot->GetPlayerbotAI()->HasStrategy("ai chat", BotState::BOT_STATE_NON_COMBAT) || sPlayerbotAIConfig.llmEnabled == 3) && chatChannelSource != ChatChannelSource::SRC_UNDEFINED && sPlayerbotAIConfig.llmBlockedReplyChannels.find(chatChannelSource) == sPlayerbotAIConfig.llmBlockedReplyChannels.end()
+    // First sidecar vertical slice: only a real player's private message. The
+    // gateway copies the request into a bounded queue and returns immediately;
+    // all HTTP and JSON response work happens away from the world thread.
+    if (sPlayerbotAIConfig.sidecarEnabled && chatChannelSource == ChatChannelSource::SRC_WHISPER)
+    {
+        Player* player = sObjectAccessor.FindPlayer(ObjectGuid(HIGHGUID_PLAYER, guid1));
+        PlayerbotAI* ai = bot->GetPlayerbotAI();
+        if (ai && player && player != bot && player->isRealPlayer())
+        {
+            WorldPosition position(bot);
+            PlayerbotDialogueRequest request;
+            request.botGuid = bot->GetGUIDLow();
+            request.contextId = ai->GetDialogueContextId();
+            request.speakerGuid = player->GetGUIDLow();
+            request.botName = PlayerbotLLMInterface::NormalizeUtf8(bot->GetName());
+            request.botLevel = bot->GetLevel();
+            request.botRace = PlayerbotLLMInterface::NormalizeUtf8(ChatHelper::formatRace(bot->getRace()));
+            request.botClass = PlayerbotLLMInterface::NormalizeUtf8(ChatHelper::formatClass(bot->getClass()));
+            request.zone = PlayerbotLLMInterface::NormalizeUtf8(position.getAreaName(true, true));
+            if (request.zone.empty())
+                request.zone = "Unknown";
+            request.subzone = PlayerbotLLMInterface::NormalizeUtf8(position.getAreaOverride());
+            request.speakerName = PlayerbotLLMInterface::NormalizeUtf8(player->GetName());
+            request.speakerKind = "player";
+            request.relationship = "stranger";
+            request.channel = "whisper";
+            request.language = IsAlliance(bot->getRace()) ? "common" : "orcish";
+            request.text = PlayerbotLLMInterface::NormalizeUtf8(msg);
+
+            if (!request.text.empty() && sPlayerbotDialogueGateway.TrySubmit(std::move(request)))
+                return;
+        }
+    }
+
+    if (!sPlayerbotAIConfig.sidecarEnabled && bot->GetPlayerbotAI() && sPlayerbotAIConfig.llmEnabled > 0 && (bot->GetPlayerbotAI()->HasStrategy("ai chat", BotState::BOT_STATE_NON_COMBAT) || sPlayerbotAIConfig.llmEnabled == 3) && chatChannelSource != ChatChannelSource::SRC_UNDEFINED && sPlayerbotAIConfig.llmBlockedReplyChannels.find(chatChannelSource) == sPlayerbotAIConfig.llmBlockedReplyChannels.end()
         )
     {
         Player* player = sObjectAccessor.FindPlayer(ObjectGuid(HIGHGUID_PLAYER, guid1));

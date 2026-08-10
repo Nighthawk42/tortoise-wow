@@ -4,8 +4,8 @@
 
 The API is versioned under `/v1`. Requests use UTF-8 JSON. Every request carries
 a unique `request_id`, stable `server_id`, absolute deadline, and contract
-version. Unknown fields may be ignored within v1; missing required fields or
-unknown enum values are rejected.
+version. The current strict models reject unknown fields, missing required
+fields, and unknown enum values.
 
 The core's gateway worker is the HTTP client. The world and map update threads
 never perform HTTP.
@@ -51,7 +51,7 @@ Example request:
   },
   "bot": {
     "actor_id": "realm:1:character:4821",
-    "persona_id": "players.mirae",
+    "character_guid_low": 4821,
     "name": "Mirae",
     "level": 18,
     "race": "human",
@@ -76,6 +76,10 @@ Example request:
   }
 }
 ```
+
+The core does not need to know a persona ID. The sidecar resolves the binding
+from `server_id`, `realm_id`, and `character_guid_low`; an optional `persona_id`
+may be supplied only as an additional consistency assertion.
 
 Successful response:
 

@@ -49,14 +49,17 @@ session tokens, database IDs, or unredacted private chat history.
 The gateway is compiled with playerbots and exposes a narrow C++ interface:
 
 ```cpp
-bool PublishDialogueRequest(DialogueRequest const& request);
-std::optional<DialogueCandidate> TryConsumeDialogue(ObjectGuid botGuid);
-void CancelForBot(ObjectGuid botGuid);
+bool TrySubmit(PlayerbotDialogueRequest request);
+bool TryTake(std::uint32_t botGuid, PlayerbotDialogueResponse& response);
+void ReportOutcome(std::string const& requestId,
+                   std::string const& outcome,
+                   std::string const& reason);
 ```
 
-`PublishDialogueRequest` is non-blocking. It either copies a bounded snapshot
+`TrySubmit` is non-blocking. It either copies a bounded snapshot
 into the queue or declines it. Network calls happen only on gateway workers.
-The response queue is also bounded and applies per-bot latest-request rules.
+The response and outcome queues are also bounded, with per-bot pending limits
+and per bot/player cooldowns. See [C++ dialogue gateway](core-gateway.md).
 
 Custom Eluna bindings may publish a supported social event or inspect delivery
 status, but they call this same gateway. Lua is not given a general HTTP client,

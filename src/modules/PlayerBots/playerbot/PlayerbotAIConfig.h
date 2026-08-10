@@ -426,6 +426,17 @@ public:
     std::set<uint32> llmBlockedReplyChannels;
     //LM END
 
+    // Dialogue sidecar. Provider credentials and personality configuration
+    // intentionally do not exist in the core.
+    bool sidecarEnabled = false;
+    std::string sidecarEndpoint, sidecarServerId, sidecarServiceToken;
+    ParsedUrl sidecarEndpointUrl;
+    uint32 sidecarRequestTimeoutMs = 8000;
+    uint32 sidecarQueueCapacity = 64;
+    uint32 sidecarMaxPendingPerBot = 1;
+    uint32 sidecarWorkerCount = 2;
+    uint32 sidecarPlayerCooldownMs = 5000;
+
     uint32 EatDrinkMinDistance = 5;
     uint32 EatDrinkMaxDistance = 1000;
 
