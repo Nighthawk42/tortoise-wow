@@ -20,6 +20,8 @@ def test_health_reports_loaded_registry(client: TestClient) -> None:
     assert body["profiles"] == 2
     assert body["bindings"] == 2
     assert body["registry_revision"].startswith("sha256:")
+    assert body["metrics"]["requests"] == 0
+    assert body["metrics"]["in_flight"] == 0
 
 
 def test_handcrafted_dialogue_and_idempotency(
@@ -35,6 +37,9 @@ def test_handcrafted_dialogue_and_idempotency(
     assert len(body["candidate"]["text"].encode("utf-8")) <= 255
     assert body["persona"]["id"] == "players.mirae"
     assert body["persona"]["revision"].startswith("sha256:")
+    metrics = client.get("/health/ready").json()["metrics"]
+    assert metrics["requests"] == 1
+    assert metrics["succeeded"] == 1
 
 
 def test_expired_request_returns_typed_failure(
@@ -85,3 +90,27 @@ def test_service_token_protects_v1_routes(
         )
         assert response.status_code == 200
         assert response.json()["status"] == "completed"
+
+
+def test_openrouter_without_key_is_not_ready(settings: Settings) -> None:
+    openrouter_settings = replace(settings, provider="openrouter", provider_api_key=None)
+    with TestClient(create_app(openrouter_settings)) as openrouter_client:
+        assert openrouter_client.get("/health/live").json() == {
+            "status": "live",
+            "provider": "openrouter",
+        }
+        response = openrouter_client.get("/health/ready")
+        assert response.status_code == 503
+        assert "API_KEY" in response.json()["detail"]["reason"]
+
+
+def test_generic_provider_without_api_base_is_not_ready(settings: Settings) -> None:
+    provider_settings = replace(
+        settings,
+        provider="openai-compatible",
+        provider_api_base=None,
+    )
+    with TestClient(create_app(provider_settings)) as provider_client:
+        response = provider_client.get("/health/ready")
+        assert response.status_code == 503
+        assert "API_BASE" in response.json()["detail"]["reason"]

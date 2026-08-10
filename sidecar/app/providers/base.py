@@ -11,7 +11,22 @@ class DialogueProvider(Protocol):
 
     async def generate(self, request: DialogueRequest, persona: ResolvedPersona) -> str: ...
 
+    async def aclose(self) -> None: ...
+
+    def metrics_snapshot(self) -> dict[str, int | float]: ...
+
 
 class ProviderError(Exception):
+    retryable = True
+
+
+class ProviderConfigurationError(ProviderError):
+    retryable = False
+
+
+class ProviderRateLimitError(ProviderError):
     pass
 
+
+class ProviderInvalidOutputError(ProviderError):
+    retryable = False

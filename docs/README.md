@@ -14,6 +14,7 @@ state. Existing playerbot strategies continue to make those decisions.
 - [Target sidecar architecture](architecture.md)
 - [Sidecar API contract](sidecar-api.md)
 - [Runnable sidecar scaffold](../sidecar/README.md)
+- [LLM provider adapter and prompt compiler](provider-adapter.md)
 - [Windows launcher dashboard](../launcher/README.md)
 - [YAML personality system](personality-system.md)
 - [Memory system](memory-system.md)

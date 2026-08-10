@@ -10,6 +10,7 @@ from launcher.runtime import (
     discover_server_root,
     load_config,
     parse_netstat_listeners,
+    service_environment,
     tail_text,
 )
 
@@ -61,9 +62,9 @@ def test_load_config_renders_root_and_service_kind(tmp_path: Path) -> None:
                         "working_directory": ".",
                         "port": 8090,
                         "stdout_log": "logs/out.log",
-                        "stderr_log": "logs/err.log"
+                        "stderr_log": "logs/err.log",
                     }
-                }
+                },
             }
         ),
         encoding="utf-8",
@@ -88,9 +89,9 @@ def test_rejects_paths_outside_runtime_root(tmp_path: Path) -> None:
                         "executable": "../outside.exe",
                         "port": 1234,
                         "stdout_log": "logs/out.log",
-                        "stderr_log": "logs/err.log"
+                        "stderr_log": "logs/err.log",
                     }
-                }
+                },
             }
         ),
         encoding="utf-8",
@@ -107,17 +108,31 @@ def test_rejects_duplicate_ports(tmp_path: Path) -> None:
         "executable": "bin/mangosd.exe",
         "port": 8090,
         "stdout_log": "logs/out.log",
-        "stderr_log": "logs/err.log"
+        "stderr_log": "logs/err.log",
     }
     path = root / "launcher.json"
     path.write_text(
         json.dumps(
             {
                 "startup_order": ["one", "two"],
-                "services": {"one": row, "two": {**row, "display_name": "Two"}}
+                "services": {"one": row, "two": {**row, "display_name": "Two"}},
             }
         ),
         encoding="utf-8",
     )
     with pytest.raises(LauncherError, match="port must be unique"):
         load_config(path, root)
+
+
+def test_provider_credentials_are_inherited_only_by_sidecar(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setenv("TORTOISE_LLM_API_KEY", "test-secret")
+    monkeypatch.setenv("OPENROUTER_API_KEY", "test-openrouter-secret")
+    monkeypatch.setenv("PATH", "test-path")
+
+    assert service_environment(ServiceKind.SIDECAR)["TORTOISE_LLM_API_KEY"] == "test-secret"
+    world_environment = service_environment(ServiceKind.WORLD)
+    assert "TORTOISE_LLM_API_KEY" not in world_environment
+    assert "OPENROUTER_API_KEY" not in world_environment
+    assert world_environment["PATH"] == "test-path"

@@ -168,9 +168,23 @@ class OutcomeAccepted(StrictModel):
     status: Literal["accepted"] = "accepted"
 
 
+class ProviderMetricsSnapshot(StrictModel):
+    requests: int = Field(ge=0)
+    succeeded: int = Field(ge=0)
+    timed_out: int = Field(ge=0)
+    rate_limited: int = Field(ge=0)
+    invalid_responses: int = Field(ge=0)
+    unavailable: int = Field(ge=0)
+    cancelled: int = Field(ge=0)
+    in_flight: int = Field(ge=0)
+    peak_in_flight: int = Field(ge=0)
+    average_latency_ms: float = Field(ge=0.0)
+
+
 class HealthStatus(StrictModel):
     status: Literal["live", "ready", "not_ready"]
     provider: str | None = None
     registry_revision: str | None = None
     profiles: int | None = None
     bindings: int | None = None
+    metrics: ProviderMetricsSnapshot | None = None

@@ -1,0 +1,6 @@
+schema_version: 1
+profiles:
+  dialogue-small:
+    # OpenRouter's free router chooses among currently available zero-cost models.
+    model: openrouter/free
+    max_completion_tokens: 96

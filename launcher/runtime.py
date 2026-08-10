@@ -35,6 +35,27 @@ class ServicePhase(StrEnum):
     FAILED = "failed"
 
 
+PROVIDER_CREDENTIAL_ENVIRONMENT = frozenset(
+    {
+        "TORTOISE_LLM_API_KEY",
+        "OPENROUTER_API_KEY",
+        "OPENCODE_API_KEY",
+        "OPENAI_API_KEY",
+        "ANTHROPIC_API_KEY",
+        "GOOGLE_API_KEY",
+    }
+)
+
+
+def service_environment(kind: ServiceKind) -> dict[str, str]:
+    """Limit LLM provider credentials to the sidecar process."""
+    environment = os.environ.copy()
+    if kind != ServiceKind.SIDECAR:
+        for variable in PROVIDER_CREDENTIAL_ENVIRONMENT:
+            environment.pop(variable, None)
+    return environment
+
+
 @dataclass(frozen=True, slots=True)
 class ServiceSpec:
     service_id: str
@@ -146,9 +167,7 @@ def load_config(path: Path, server_root: Path | None = None) -> LauncherConfig:
                 stdin_pipe=bool(row.get("stdin_pipe", False)),
                 graceful_stop_command=row.get("graceful_stop_command"),
                 admin_executable=(
-                    _resolve_inside(root, admin_value, "admin_executable")
-                    if admin_value
-                    else None
+                    _resolve_inside(root, admin_value, "admin_executable") if admin_value else None
                 ),
                 password_file=(
                     _resolve_inside(root, password_value, "password_file")
@@ -190,6 +209,7 @@ def parse_netstat_listeners(output: str) -> dict[int, set[int]]:
 def tcp_listeners() -> dict[int, set[int]]:
     result = subprocess.run(
         ["netstat", "-ano", "-p", "TCP"],
+        env=service_environment(ServiceKind.SERVER),
         capture_output=True,
         text=True,
         check=False,
@@ -275,9 +295,7 @@ class ServiceSupervisor:
                 for service_id, spec in self.config.services.items()
             }
 
-    def _status_for(
-        self, spec: ServiceSpec, listeners: dict[int, set[int]]
-    ) -> ServiceStatus:
+    def _status_for(self, spec: ServiceSpec, listeners: dict[int, set[int]]) -> ServiceStatus:
         pids = sorted(listeners.get(spec.port, set()))
         if not pids:
             managed = self._managed.get(spec.service_id)
@@ -360,6 +378,7 @@ class ServiceSupervisor:
             process = subprocess.Popen(
                 spec.command,
                 cwd=spec.working_directory,
+                env=service_environment(spec.kind),
                 stdin=subprocess.PIPE if spec.stdin_pipe else subprocess.DEVNULL,
                 stdout=stdout_handle,
                 stderr=stderr_handle,
@@ -463,7 +482,7 @@ class ServiceSupervisor:
         password = spec.password_file.read_text(encoding="utf-8").strip()
         if not password:
             raise LauncherError("database password file is empty")
-        environment = os.environ.copy()
+        environment = service_environment(spec.kind)
         environment["MYSQL_PWD"] = password
         try:
             result = subprocess.run(
@@ -516,6 +535,7 @@ class ServiceSupervisor:
                     "import sys; print(sys._base_executable)",
                 ],
                 cwd=spec.working_directory,
+                env=service_environment(ServiceKind.SERVER),
                 capture_output=True,
                 text=True,
                 check=False,

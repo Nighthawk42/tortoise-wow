@@ -10,13 +10,13 @@ from fastapi import Depends, FastAPI, Header, HTTPException, status
 from app.models.api import (
     DialogueRequest,
     DialogueResponse,
-    ErrorCode,
     HealthStatus,
     OutcomeAccepted,
     OutcomeRequest,
 )
 from app.personas.registry import PersonaRegistry, RegistryError
-from app.providers.mock import MockDialogueProvider
+from app.providers.base import DialogueProvider, ProviderConfigurationError
+from app.providers.factory import create_provider
 from app.service import DialogueService
 from app.settings import Settings
 
@@ -46,19 +46,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     @asynccontextmanager
     async def lifespan(_: FastAPI) -> AsyncIterator[None]:
+        provider: DialogueProvider | None = None
         try:
-            if resolved_settings.provider != "mock":
-                raise RegistryError(
-                    code=ErrorCode.PERSONA_INVALID,
-                    message=f"unsupported provider {resolved_settings.provider}",
-                )
             registry = PersonaRegistry.load(
                 resolved_settings.config_dir, resolved_settings.server_id
             )
-            runtime.service = DialogueService(registry, MockDialogueProvider())
-        except RegistryError as exc:
+            provider = create_provider(resolved_settings)
+            runtime.service = DialogueService(registry, provider)
+        except (RegistryError, ProviderConfigurationError) as exc:
             runtime.registry_error = str(exc)
-        yield
+        try:
+            yield
+        finally:
+            if provider is not None:
+                await provider.aclose()
 
     app = FastAPI(
         title="Tortoise AI Sidecar",
@@ -85,6 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             registry_revision=registry.revision,
             profiles=registry.profile_count,
             bindings=registry.binding_count,
+            metrics=runtime.service.provider.metrics_snapshot(),
         )
 
     @app.post(

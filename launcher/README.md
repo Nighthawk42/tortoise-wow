@@ -19,6 +19,18 @@ Double-click `dev\launcher\run-dashboard.cmd`, or run:
 dev\sidecar\.venv\Scripts\python.exe dev\launcher\main.py
 ```
 
+To run the dashboard with a cloud-provider key, inject it into the dashboard
+process and let the launcher pass it only to the sidecar child:
+
+```powershell
+$env:TORTOISE_SIDECAR_PROVIDER = "openrouter"
+bwsx exec --secret TORTOISE_LLM_API_KEY=OpenRouter -- `
+  dev\sidecar\.venv\Scripts\python.exe dev\launcher\main.py
+```
+
+The launcher removes known provider credential variables from MariaDB,
+`realmd`, `mangosd`, and database-administration child environments.
+
 Validate paths and inspect current status without opening a window:
 
 ```powershell

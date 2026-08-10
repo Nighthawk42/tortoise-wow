@@ -15,7 +15,12 @@ from app.models.api import (
     PersonaReference,
 )
 from app.personas.registry import PersonaRegistry, RegistryError
-from app.providers.base import DialogueProvider, ProviderError
+from app.providers.base import (
+    DialogueProvider,
+    ProviderError,
+    ProviderInvalidOutputError,
+    ProviderRateLimitError,
+)
 
 
 class DialogueService:
@@ -41,12 +46,18 @@ class DialogueService:
             return await self._remember_failure(request, exc.code)
 
         try:
-            text = await self.provider.generate(request, persona)
+            remaining = (request.deadline - datetime.now(UTC)).total_seconds()
+            async with asyncio.timeout(max(remaining, 0)):
+                text = await self.provider.generate(request, persona)
         except TimeoutError:
             return await self._remember_failure(request, ErrorCode.PROVIDER_TIMEOUT, retryable=True)
-        except ProviderError:
+        except ProviderRateLimitError:
+            return await self._remember_failure(request, ErrorCode.RATE_LIMITED, retryable=True)
+        except ProviderInvalidOutputError:
+            return await self._remember_failure(request, ErrorCode.PROVIDER_INVALID_OUTPUT)
+        except ProviderError as exc:
             return await self._remember_failure(
-                request, ErrorCode.PROVIDER_UNAVAILABLE, retryable=True
+                request, ErrorCode.PROVIDER_UNAVAILABLE, retryable=exc.retryable
             )
 
         if not text or len(text.encode("utf-8")) > request.limits.max_utf8_bytes:
