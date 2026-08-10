@@ -34,16 +34,20 @@ controlled by request admission and concurrency rather than prompt size.
 `dialogue-small`, to concrete model identifiers. It contains no credentials.
 `TORTOISE_LLM_MODEL` can override a route for an operational smoke test.
 
-Provider credentials are read only from the sidecar environment. The preferred
-runtime form is:
+Provider credentials are read only by the sidecar. The normal local installation
+flow copies the ignored template and supplies the user's own key:
 
 ```powershell
-bwsx exec --secret TORTOISE_LLM_API_KEY=OpenCode -- <sidecar-or-launcher-command>
+Copy-Item sidecar/.env.example sidecar/.env
+# Edit sidecar/.env, then start the sidecar or dashboard normally.
 ```
 
-When the dashboard receives such a key, it passes known LLM credential variables
-only to the sidecar and strips them from MariaDB, `realmd`, `mangosd`, and the
-database administration process.
+Process environment variables override `.env`. Deployments can use a service
+manager, container secrets, or `TORTOISE_SIDECAR_ENV_FILE` for a separately
+protected file. No particular secret manager is required. When the dashboard
+does receive an injected key, it passes known LLM credential variables only to
+the sidecar and strips them from MariaDB, `realmd`, `mangosd`, and the database
+administration process.
 
 ## Failure behavior
 
@@ -60,7 +64,7 @@ latency counts without including prompt text or credentials.
 ## Free-provider validation
 
 The adapter has been exercised against OpenCode Zen's `mimo-v2.5-free` endpoint
-with an ephemeral Bitwarden credential. OpenRouter's documented `openrouter/free`
+with an ephemeral process-injected credential. OpenRouter's documented `openrouter/free`
 route is the default model mapping. Free routers are suitable for development,
 but their availability, selected model, latency, and rate limits can vary; the
 deterministic mock remains the default for tests.

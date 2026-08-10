@@ -4,6 +4,8 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
+from dotenv import dotenv_values
+
 
 @dataclass(frozen=True, slots=True)
 class Settings:
@@ -22,27 +24,43 @@ class Settings:
 
     @classmethod
     def from_environment(cls) -> Settings:
-        default_config = Path(__file__).resolve().parents[1] / "config"
-        configured_dir = os.getenv("TORTOISE_SIDECAR_CONFIG_DIR")
-        token = os.getenv("TORTOISE_SIDECAR_SERVICE_TOKEN") or None
-        provider = os.getenv("TORTOISE_SIDECAR_PROVIDER", "mock").casefold()
-        configured_api_base = os.getenv("TORTOISE_LLM_API_BASE") or None
+        sidecar_root = Path(__file__).resolve().parents[1]
+        configured_env_file = os.getenv("TORTOISE_SIDECAR_ENV_FILE")
+        env_file = (
+            Path(configured_env_file).resolve() if configured_env_file else sidecar_root / ".env"
+        )
+        file_values = dotenv_values(env_file) if env_file.is_file() else {}
+
+        def value(name: str, default: str | None = None) -> str | None:
+            if name in os.environ:
+                return os.environ[name]
+            configured = file_values.get(name)
+            return configured if configured is not None else default
+
+        default_config = sidecar_root / "config"
+        configured_dir = value("TORTOISE_SIDECAR_CONFIG_DIR")
+        token = value("TORTOISE_SIDECAR_SERVICE_TOKEN") or None
+        provider = (value("TORTOISE_SIDECAR_PROVIDER", "mock") or "mock").casefold()
+        configured_api_base = value("TORTOISE_LLM_API_BASE") or None
         if provider == "openrouter" and configured_api_base is None:
             configured_api_base = "https://openrouter.ai/api/v1"
-        api_key = os.getenv("TORTOISE_LLM_API_KEY") or None
+        api_key = value("TORTOISE_LLM_API_KEY") or None
         if provider == "openrouter" and api_key is None:
-            api_key = os.getenv("OPENROUTER_API_KEY") or None
+            api_key = value("OPENROUTER_API_KEY") or None
         return cls(
             config_dir=Path(configured_dir).resolve() if configured_dir else default_config,
-            server_id=os.getenv("TORTOISE_SIDECAR_SERVER_ID", "turtle-dev"),
+            server_id=value("TORTOISE_SIDECAR_SERVER_ID", "turtle-dev") or "turtle-dev",
             provider=provider,
             service_token=token,
             provider_api_base=configured_api_base.rstrip("/") if configured_api_base else None,
             provider_api_key=api_key,
-            provider_model_override=os.getenv("TORTOISE_LLM_MODEL") or None,
-            provider_timeout_seconds=float(os.getenv("TORTOISE_LLM_TIMEOUT_SECONDS", "12")),
-            provider_max_concurrency=int(os.getenv("TORTOISE_LLM_MAX_CONCURRENCY", "4")),
-            provider_requests_per_minute=int(os.getenv("TORTOISE_LLM_REQUESTS_PER_MINUTE", "20")),
-            provider_http_referer=os.getenv("TORTOISE_LLM_HTTP_REFERER") or None,
-            provider_app_title=os.getenv("TORTOISE_LLM_APP_TITLE", "Tortoise WoW AI Players"),
+            provider_model_override=value("TORTOISE_LLM_MODEL") or None,
+            provider_timeout_seconds=float(value("TORTOISE_LLM_TIMEOUT_SECONDS", "12") or "12"),
+            provider_max_concurrency=int(value("TORTOISE_LLM_MAX_CONCURRENCY", "4") or "4"),
+            provider_requests_per_minute=int(
+                value("TORTOISE_LLM_REQUESTS_PER_MINUTE", "20") or "20"
+            ),
+            provider_http_referer=value("TORTOISE_LLM_HTTP_REFERER") or None,
+            provider_app_title=value("TORTOISE_LLM_APP_TITLE", "Tortoise WoW AI Players")
+            or "Tortoise WoW AI Players",
         )

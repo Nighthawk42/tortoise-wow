@@ -19,17 +19,23 @@ Double-click `dev\launcher\run-dashboard.cmd`, or run:
 dev\sidecar\.venv\Scripts\python.exe dev\launcher\main.py
 ```
 
-To run the dashboard with a cloud-provider key, inject it into the dashboard
-process and let the launcher pass it only to the sidecar child:
+The normal cloud-provider setup is an ignored `dev\sidecar\.env` copied from
+`.env.example`. The sidecar reads that file itself, so the dashboard and other
+server processes never receive its provider key.
+
+Operators using a service manager, container secret, or another environment
+injection mechanism can instead put provider variables in the dashboard process
+environment:
 
 ```powershell
 $env:TORTOISE_SIDECAR_PROVIDER = "openrouter"
-bwsx exec --secret TORTOISE_LLM_API_KEY=OpenRouter -- `
-  dev\sidecar\.venv\Scripts\python.exe dev\launcher\main.py
+$env:TORTOISE_LLM_API_KEY = "<provider key>"
+dev\sidecar\.venv\Scripts\python.exe dev\launcher\main.py
 ```
 
-The launcher removes known provider credential variables from MariaDB,
-`realmd`, `mangosd`, and database-administration child environments.
+When environment injection is used, the launcher removes known provider
+credential variables from MariaDB, `realmd`, `mangosd`, and
+database-administration child environments.
 
 Validate paths and inspect current status without opening a window:
 

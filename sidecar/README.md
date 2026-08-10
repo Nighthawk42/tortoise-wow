@@ -30,17 +30,20 @@ committed environment files.
 
 `config/providers.yaml` maps the logical `dialogue-small` profile used by
 personas to `openrouter/free`. The profile mapping contains no credentials.
-Run the smoke test with an ephemeral Bitwarden injection:
+For a local installation, copy the ignored environment template and add the
+user's own provider key:
 
 ```powershell
-$env:TORTOISE_SIDECAR_PROVIDER = "openrouter"
-$env:TORTOISE_LLM_TIMEOUT_SECONDS = "45"
-bwsx exec --secret OPENROUTER_API_KEY=OpenRouter -- `
-  uv run python -m scripts.provider_smoke
+Copy-Item .env.example .env
+# Edit .env: select openrouter and set OPENROUTER_API_KEY.
+uv run python -m scripts.provider_smoke
 ```
 
-Replace `OpenRouter` with the secret alias shown by `bwsx list`. Nothing is
-written to `.env`, the shell command line, provider logs, or MaNGOS config.
+The sidecar reads `sidecar/.env` without copying its values into the global
+process environment. Existing environment variables take precedence. Production
+operators can instead inject the same names with a service manager, container
+secret, or `TORTOISE_SIDECAR_ENV_FILE` pointing to a separately protected file.
+The launcher requires no secret-manager-specific application.
 
 For a self-hosted OpenAI-compatible endpoint, set the provider to
 `openai-compatible`, set `TORTOISE_LLM_API_BASE`, and change the model route in
