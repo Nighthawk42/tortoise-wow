@@ -1,0 +1,66 @@
+{
+  "refresh_seconds": 2,
+  "startup_order": ["database", "realmd", "sidecar", "mangosd"],
+  "services": {
+    "database": {
+      "display_name": "MariaDB",
+      "kind": "database",
+      "executable": "database/mariadb-12.3.2-winx64/bin/mariadbd.exe",
+      "arguments": [
+        "--defaults-file={root}/database/mariadb-12.3.2-winx64/data/my.ini",
+        "--console"
+      ],
+      "working_directory": "database/mariadb-12.3.2-winx64",
+      "port": 3306,
+      "startup_timeout_seconds": 45,
+      "stdout_log": "logs/launcher-mariadb.stdout.log",
+      "stderr_log": "logs/launcher-mariadb.stderr.log",
+      "admin_executable": "database/mariadb-12.3.2-winx64/bin/mariadb-admin.exe",
+      "password_file": "database/db_password.txt"
+    },
+    "realmd": {
+      "display_name": "Realm Server",
+      "kind": "server",
+      "executable": "bin/realmd.exe",
+      "arguments": ["-c", "{root}/config/realmd.conf"],
+      "working_directory": ".",
+      "port": 3724,
+      "startup_timeout_seconds": 30,
+      "stdout_log": "logs/launcher-realmd.stdout.log",
+      "stderr_log": "logs/launcher-realmd.stderr.log"
+    },
+    "sidecar": {
+      "display_name": "AI Sidecar",
+      "kind": "sidecar",
+      "executable": "dev/sidecar/.venv/Scripts/python.exe",
+      "arguments": [
+        "-m",
+        "uvicorn",
+        "app.main:app",
+        "--host",
+        "127.0.0.1",
+        "--port",
+        "8100"
+      ],
+      "working_directory": "dev/sidecar",
+      "port": 8100,
+      "startup_timeout_seconds": 30,
+      "health_url": "http://127.0.0.1:8100/health/ready",
+      "stdout_log": "logs/launcher-sidecar.stdout.log",
+      "stderr_log": "logs/launcher-sidecar.stderr.log"
+    },
+    "mangosd": {
+      "display_name": "World Server",
+      "kind": "world",
+      "executable": "bin/mangosd.exe",
+      "arguments": ["-c", "{root}/config/mangosd.conf"],
+      "working_directory": ".",
+      "port": 8090,
+      "startup_timeout_seconds": 2100,
+      "stdin_pipe": true,
+      "graceful_stop_command": "server shutdown 1",
+      "stdout_log": "logs/launcher-mangosd.stdout.log",
+      "stderr_log": "logs/launcher-mangosd.stderr.log"
+    }
+  }
+}

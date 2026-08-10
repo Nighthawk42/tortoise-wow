@@ -127,6 +127,12 @@ and 2,922 help-text rows.
 
 ## Runtime proof
 
+For routine Windows operation, use the Python dashboard documented in
+[`dev/launcher/README.md`](../launcher/README.md). It starts MariaDB, `realmd`,
+the sidecar, and `mangosd` in dependency order; keeps console output under
+`logs`; verifies process ownership before stopping a listener; and preserves
+the clean runtime layout described above.
+
 The installed `lua_scripts/ai-bot-smoke.lua` prints one marker when Eluna loads
 the file and another when it receives world startup event 14. Both messages
 must appear in `logs/mangosd.stdout.log`:

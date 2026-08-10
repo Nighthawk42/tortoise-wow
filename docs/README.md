@@ -13,6 +13,8 @@ state. Existing playerbot strategies continue to make those decisions.
 - [How the current playerbots work](playerbots-current-system.md)
 - [Target sidecar architecture](architecture.md)
 - [Sidecar API contract](sidecar-api.md)
+- [Runnable sidecar scaffold](../sidecar/README.md)
+- [Windows launcher dashboard](../launcher/README.md)
 - [YAML personality system](personality-system.md)
 - [Memory system](memory-system.md)
 - [Required Eluna integration](eluna-integration.md)
@@ -37,10 +39,18 @@ state. Existing playerbot strategies continue to make those decisions.
   configuration, and source; required DLLs are installed beside the servers.
 - The playerbot SQL schema has been imported into the existing databases from
   a verified backup, and the Eluna load/startup smoke test passes.
-- The one-account smoke roster has nine generated Classic characters; all nine
-  have been verified online after a clean restart.
-- The sidecar transport, custom playerbot Lua bindings, YAML loader, and memory
-  adapters are intentionally later phases described in the roadmap.
+- The one-account smoke roster has nine generated Classic characters and
+  stabilizes at its configured target of five online bots after the current
+  Shyalya merge.
+- The standalone FastAPI sidecar scaffold implements the v1 health, dialogue,
+  and outcome contracts; strict YAML validation; handcrafted profiles; stable
+  seeded race/class archetypes; explicit roster bindings; idempotency; and a
+  deterministic mock provider.
+- The Python launcher dashboard manages the database, realm server, sidecar,
+  and world server in dependency order with PID/port health, verified process
+  ownership, graceful shutdown, and organized live logs.
+- The real provider adapter, core gateway transport, custom playerbot Lua
+  bindings, and memory adapters remain later slices described in the roadmap.
 
 ## Terminology
 

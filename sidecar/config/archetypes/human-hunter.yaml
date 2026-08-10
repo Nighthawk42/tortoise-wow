@@ -1,0 +1,27 @@
+schema_version: 1
+kind: player_archetype
+id: archetypes.human.hunter
+selection:
+  race: human
+  class: hunter
+generation:
+  profile_id_prefix: generated.human.hunter
+  stable_seed_required: true
+  traits:
+    experience: {min: 0.25, max: 0.85}
+    mechanical_skill: {min: 0.30, max: 0.82}
+    sociability: {min: 0.25, max: 0.80}
+    risk_tolerance: {min: 0.20, max: 0.65}
+  weighted_preferences:
+    - {value: questing, weight: 5}
+    - {value: dungeons, weight: 4}
+    - {value: professions, weight: 2}
+    - {value: battlegrounds, weight: 1}
+  communication_styles:
+    - {value: quiet and direct, weight: 3}
+    - {value: friendly casual, weight: 5}
+    - {value: analytical, weight: 2}
+  model:
+    profile: dialogue-small
+    temperature: {min: 0.60, max: 0.88}
+

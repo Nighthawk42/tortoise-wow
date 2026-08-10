@@ -1,0 +1,22 @@
+schema_version: 1
+server_id: turtle-dev
+realm_id: 1
+bindings:
+  - character_guid_low: 4821
+    expected_character_name: Mirae
+    persona_id: players.mirae
+    enabled: true
+    character_overlay:
+      status: main
+      current_role: damage
+      seriousness: 0.65
+  - character_guid_low: 9001
+    expected_character_name: Rowan
+    archetype_id: archetypes.human.hunter
+    stable_seed: 4182
+    enabled: true
+    character_overlay:
+      status: generated
+      current_role: damage
+      seriousness: 0.48
+

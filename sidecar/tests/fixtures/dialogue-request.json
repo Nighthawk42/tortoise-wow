@@ -1,0 +1,41 @@
+{
+  "contract_version": "1.0",
+  "request_id": "5f7e4dd5-f4e4-4c7a-85cf-9e31bbbaeeec",
+  "server_id": "turtle-dev",
+  "realm_id": 1,
+  "deadline": "2099-08-09T18:30:08Z",
+  "event": {
+    "type": "dialogue.requested",
+    "occurred_at": "2026-08-09T18:30:00Z",
+    "channel": "whisper",
+    "text": "Do you know the way to Sentinel Hill?",
+    "language": "common"
+  },
+  "bot": {
+    "actor_id": "realm:1:character:4821",
+    "persona_id": "players.mirae",
+    "character_guid_low": 4821,
+    "name": "Mirae",
+    "level": 18,
+    "race": "human",
+    "class": "hunter",
+    "zone": "Westfall",
+    "subzone": "The Jansen Stead",
+    "group_role": "damage"
+  },
+  "speaker": {
+    "actor_id": "session:01J4K8FQ7P7GQYAC9H8J5M5A0F",
+    "display_name": "Traveler",
+    "kind": "player",
+    "relationship": "stranger"
+  },
+  "limits": {
+    "max_utf8_bytes": 255,
+    "allowed_output": ["chat.text"]
+  },
+  "context": {
+    "recent_dialogue": [],
+    "facts": ["Sentinel Hill is southeast of the Jansen Stead"]
+  }
+}
+

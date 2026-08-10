@@ -27,16 +27,20 @@ Exit criteria:
 
 ## Phase 1: dialogue sidecar vertical slice
 
-- Scaffold FastAPI service with `/health/*`, `/v1/dialogue`, and `/v1/outcomes`.
-- Add strict request/response models and contract fixtures.
-- Implement one OpenAI-compatible provider adapter.
-- Implement hand-crafted profiles, race/class system archetypes, stable seeded
+Status: in progress. The standalone contract scaffold is implemented and
+tested; provider and core-gateway integration remain.
+
+- [x] Scaffold FastAPI service with `/health/*`, `/v1/dialogue`, and
+  `/v1/outcomes`.
+- [x] Add strict request/response models and contract fixtures.
+- [ ] Implement one OpenAI-compatible provider adapter.
+- [x] Implement hand-crafted profiles, race/class system archetypes, stable seeded
   materialization, schema validation, and explicit roster bindings.
-- Add a bounded C++ gateway worker and response queue.
-- Replace the legacy direct `PlayerbotLLMInterface::Generate` path with gateway
+- [ ] Add a bounded C++ gateway worker and response queue.
+- [ ] Replace the legacy direct `PlayerbotLLMInterface::Generate` path with gateway
   enqueue/result consumption.
-- Allow only `chat.text` output.
-- Add timeouts, rate limits, cancellation, and structured metrics.
+- [x] Allow only `chat.text` output.
+- [ ] Add timeouts, rate limits, cancellation, and structured metrics.
 
 Exit criteria:
 
